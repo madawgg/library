@@ -124,3 +124,6 @@
     - `php artisan test`: 168 tests en verde. `pint --test` sin incidencias.
     - En el navegador, sobre MySQL: alta con ISBN, edición con ubicación encadenada, subida de portada (1600×2400 → 800×1200 WebP), préstamo, `loans:check-overdue` marcando el vencido, historial con 76 días y filtros por URL.
   - Pendiente: los archivos de portada que quedan en `covers/pending` si alguien abandona el formulario no se limpian solos.
+- Commit `a6fc8c3` (libros de la spec 002).
+- Creada `docs/specs/005-mejoras-y-retoques.md`, abierta y sin aprobar. Se implementará al final e irá creciendo. Primera mejora, M-01: formularios a todo el ancho del contenedor, redimensionando si hace falta.
+- Spec 005: añadida M-02, redimensionar la ficha de cada libro. Queda abierta hasta tener especificaciones concretas.
