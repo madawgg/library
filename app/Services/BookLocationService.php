@@ -45,6 +45,59 @@ class BookLocationService
     }
 
     /**
+     * Put the book at the given position of a compartment (1 = leftmost; beyond the end = last),
+     * or on the table when the compartment is null. Origin and destination are renumbered without gaps
+     * (spec 004, RF-06 and RF-07).
+     */
+    public function move(Book $book, ?Compartment $compartment, ?int $position): void
+    {
+        if ($compartment && ! $this->belongsToLibraryOf($compartment, $book->user)) {
+            throw new InvalidArgumentException('A book can only be placed in its owner\'s bookcases.');
+        }
+
+        DB::transaction(function () use ($book, $compartment, $position) {
+            $previousCompartmentId = $book->compartment_id;
+
+            if (! $compartment) {
+                $book->compartment()->dissociate();
+                $book->position = null;
+                $book->save();
+            } else {
+                $siblings = $compartment->books()->whereKeyNot($book->id)->orderBy('position')->get()->values();
+                $index = max(0, min(($position ?? PHP_INT_MAX) - 1, $siblings->count()));
+
+                $book->compartment()->associate($compartment);
+                $siblings->splice($index, 0, [$book]);
+
+                $siblings->each(function (Book $sibling, int $order) {
+                    if ($sibling->position !== $order + 1 || $sibling->isDirty()) {
+                        $sibling->position = $order + 1;
+                        $sibling->save();
+                    }
+                });
+            }
+
+            if ($previousCompartmentId && $previousCompartmentId !== $compartment?->id) {
+                $this->renumber($previousCompartmentId);
+            }
+        });
+    }
+
+    /**
+     * "Estantería grande, Balda 2 · Poesía, Hueco 3" for announcements and labels.
+     */
+    public function compartmentLabel(Compartment $compartment): string
+    {
+        $shelf = $compartment->shelf;
+
+        return implode(', ', [
+            $shelf->bookcase->name,
+            $this->numberedName(__('Balda :number', ['number' => $shelf->number]), $shelf->name),
+            $this->numberedName(__('Hueco :number', ['number' => $compartment->number]), $compartment->name),
+        ]);
+    }
+
+    /**
      * Move every book of the given compartments to the table (the compartments are about to disappear).
      *
      * @param  iterable<int>  $compartmentIds

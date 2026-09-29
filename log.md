@@ -127,3 +127,23 @@
 - Commit `a6fc8c3` (libros de la spec 002).
 - Creada `docs/specs/005-mejoras-y-retoques.md`, abierta y sin aprobar. Se implementará al final e irá creciendo. Primera mejora, M-01: formularios a todo el ancho del contenedor, redimensionando si hace falta.
 - Spec 005: añadida M-02, redimensionar la ficha de cada libro. Queda abierta hasta tener especificaciones concretas.
+- Commit `01863af` (spec 005).
+- **Implementada la vista estantería de la spec 004** (RF-05 a RF-07) y, a la vez, **el selector de vistas de la spec 003** (RF-06), con TDD. Son 28 tests nuevos (`ShelfViewTest` y `BookViewSelectorTest`). Decisiones: selector completo ya, arrastrar y soltar con HTML5 nativo, y adaptación por CSS.
+  - Selector:
+    - Cuadrícula (por defecto), Tabla y Estantería. Se guarda en la cuenta (columna `users.book_view` y enum `BookView`, a través de `UserPreferenceService`).
+    - La opción Estantería solo se ve a partir de 1280 px. En pantallas más estrechas se muestra la tabla.
+    - El listado global de los admins no ofrece Estantería, porque necesita una sola biblioteca.
+  - Cuadrícula: portada o marcador con título y autor.
+  - Estantería (componente `books.shelf-view` y `ShelfViewService`):
+    - Selectores de sala y estantería. Se dibujan las baldas y huecos con sus nombres, y los libros como lomos con el título en vertical. Al pasar el ratón o enfocar un lomo aparece una ficha con la portada y los datos.
+    - La mesa muestra los libros sin ubicación en orden alfabético, 8 cada vez, con flechas.
+  - Movimientos: `BookLocationService::move()` inserta el libro en una posición concreta y renumera el hueco de origen y el de destino. Lo usan las tres formas de mover:
+    - Arrastrar y soltar: la posición se calcula según dónde se suelta el libro.
+    - Menú de cada libro con "Mover a…": diálogo con estantería, balda, hueco, posición o mesa.
+    - "Seleccionar y colocar": botones "Colocar aquí" en cada posición y "Dejar en la mesa". Escape cancela.
+    - Los cambios se anuncian a los lectores de pantalla y el foco vuelve al libro.
+  - En modo estantería los filtros del listado se ocultan a partir de 1280 px, porque no se aplican a la estantería.
+  - Verificación:
+    - `php artisan test`: 196 tests en verde. `pint --test` sin incidencias.
+    - En el navegador, a 1440 px: estantería dibujada; arrastrar a un hueco y delante de otro libro; menú con teclado, selección y cancelación con Escape; diálogo "Mover a…" con foco y Escape.
+    - Se crearon 4 libros de prueba para el Test User (Rayuela, Pedro Páramo, Ficciones y La Regenta), y Rayuela y Ficciones quedaron en la balda 1, hueco 1.

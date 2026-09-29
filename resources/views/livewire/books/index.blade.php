@@ -1,10 +1,12 @@
 <?php
 
 use App\Enums\BookCondition;
+use App\Enums\BookView;
 use App\Enums\ReadingStatus;
 use App\Models\User;
 use App\Services\BookCatalogService;
 use App\Services\BookLocationService;
+use App\Services\UserPreferenceService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
@@ -83,6 +85,20 @@ new class extends Component {
         $this->resetPage();
     }
 
+    /**
+     * Change the view of the listing and remember it in the account (spec 003, RF-06).
+     */
+    public function setView(string $view, UserPreferenceService $preferences): void
+    {
+        $bookView = BookView::tryFrom($view);
+
+        if (! $bookView || ($bookView === BookView::Shelf && $this->allLibraries)) {
+            return;
+        }
+
+        $preferences->updateBookView(Auth::user(), $bookView);
+    }
+
     public function clearFilters(): void
     {
         $this->reset('search', 'genre', 'status', 'condition', 'roomId', 'bookcaseId', 'shelfId', 'compartmentId', 'ownerFilter');
@@ -98,7 +114,7 @@ new class extends Component {
         });
     }
 
-    public function with(BookCatalogService $catalog, BookLocationService $locations): array
+    public function with(BookCatalogService $catalog, BookLocationService $locations, UserPreferenceService $preferences): array
     {
         $filters = [
             'search' => $this->search,
@@ -117,6 +133,8 @@ new class extends Component {
         $room = is_numeric($this->roomId) ? (int) $this->roomId : null;
 
         return [
+            'view' => $preferences->bookViewFor(Auth::user(), singleLibrary: ! $this->allLibraries),
+            'viewOptions' => $this->allLibraries ? [BookView::Grid, BookView::Table] : BookView::cases(),
             'books' => $catalog->search($this->owner, $filters, $this->sort, $this->direction),
             'isOwnLibrary' => $this->owner?->is(Auth::user()) ?? false,
             'unspecified' => BookCatalogService::UNSPECIFIED,
@@ -149,7 +167,29 @@ new class extends Component {
         </flux:button>
     </div>
 
-    <form class="space-y-4 rounded-lg border border-zinc-200 bg-surface p-4 dark:border-zinc-700" wire:submit.prevent role="search" aria-label="{{ __('Buscar y filtrar libros') }}">
+    {{-- View selector (spec 003, RF-06). The shelf option only appears from 1280 px (spec 004, RF-05). --}}
+    <div role="group" aria-label="{{ __('Vista del listado') }}" class="flex flex-wrap gap-2">
+        @foreach ($viewOptions as $option)
+            <button
+                type="button"
+                wire:click="setView('{{ $option->value }}')"
+                data-view-option="{{ $option->value }}"
+                aria-pressed="{{ $view === $option ? 'true' : 'false' }}"
+                @class([
+                    'items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium',
+                    'hidden xl:inline-flex' => $option === App\Enums\BookView::Shelf,
+                    'inline-flex' => $option !== App\Enums\BookView::Shelf,
+                    'border-leather bg-leather text-surface' => $view === $option,
+                    'border-field-border bg-surface text-ink' => $view !== $option,
+                ])
+            >
+                <flux:icon :name="$option->icon()" variant="mini" />
+                {{ $option->label() }}
+            </button>
+        @endforeach
+    </div>
+
+    <form @class(['space-y-4 rounded-lg border border-zinc-200 bg-surface p-4 dark:border-zinc-700', 'xl:hidden' => $view === App\Enums\BookView::Shelf]) wire:submit.prevent role="search" aria-label="{{ __('Buscar y filtrar libros') }}">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div class="sm:col-span-2">
                 <flux:input wire:model.live.debounce.400ms="search" type="search" icon="magnifying-glass" :label="__('Buscar por título o autor')" />
@@ -236,41 +276,28 @@ new class extends Component {
         </div>
     </form>
 
-    <p class="text-sm text-ink-muted" role="status" aria-live="polite">
-        {{ trans_choice(':count libro|:count libros', $books->total()) }}
-    </p>
+    {{-- Listing results. In shelf mode the bookcase is only drawn from 1280 px; narrower screens get the table (spec 004, RF-05). --}}
+    <div data-book-view="{{ $view->value }}" class="space-y-4">
+        <div @class(['space-y-4', 'xl:hidden' => $view === App\Enums\BookView::Shelf]) @if ($view === App\Enums\BookView::Shelf) data-table-fallback @endif>
+            <p class="text-sm text-ink-muted" role="status" aria-live="polite">
+                {{ trans_choice(':count libro|:count libros', $books->total()) }}
+            </p>
 
-    @if ($books->isNotEmpty())
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-                <caption class="sr-only">{{ __('Libros') }}</caption>
-                <thead>
-                    <tr class="border-b border-zinc-200 dark:border-zinc-700">
-                        <th scope="col" class="py-3 pe-4 font-semibold">{{ __('Título') }}</th>
-                        <th scope="col" class="py-3 pe-4 font-semibold">{{ __('Autor') }}</th>
-                        <th scope="col" class="py-3 pe-4 font-semibold">{{ __('Estado de lectura') }}</th>
-                        @if ($allLibraries)
-                            <th scope="col" class="py-3 font-semibold">{{ __('Propietario') }}</th>
-                        @endif
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($books as $book)
-                        <tr wire:key="book-{{ $book->id }}" class="border-b border-zinc-100 dark:border-zinc-800">
-                            <td class="py-3 pe-4">
-                                <a href="{{ route('books.show', $book) }}" class="font-semibold text-leather underline-offset-2 hover:underline" wire:navigate>{{ $book->title }}</a>
-                            </td>
-                            <td class="py-3 pe-4">{{ $book->author }}</td>
-                            <td class="py-3 pe-4">{{ $book->reading_status?->label() ?? __('Sin especificar') }}</td>
-                            @if ($allLibraries)
-                                <td class="py-3">{{ $book->user->name }}</td>
-                            @endif
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+            @if ($books->isNotEmpty())
+                @if ($view === App\Enums\BookView::Grid)
+                    @include('livewire.books.partials.grid')
+                @else
+                    @include('livewire.books.partials.table')
+                @endif
+
+                {{ $books->links() }}
+            @endif
         </div>
 
-        {{ $books->links() }}
-    @endif
+        @if ($view === App\Enums\BookView::Shelf && $owner)
+            <div class="hidden xl:block" data-shelf-view>
+                <livewire:books.shelf-view :owner="$owner" :key="'shelf-view-'.$owner->id" />
+            </div>
+        @endif
+    </div>
 </section>

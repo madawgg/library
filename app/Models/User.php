@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\BookView;
 use App\Enums\Role;
 use App\Enums\Theme;
 use Database\Factories\UserFactory;
@@ -49,6 +50,7 @@ class User extends Authenticatable // implements MustVerifyEmail
             'password' => 'hashed',
             'role' => Role::class,
             'theme' => Theme::class,
+            'book_view' => BookView::class,
         ];
     }
 
@@ -60,6 +62,7 @@ class User extends Authenticatable // implements MustVerifyEmail
     protected $attributes = [
         'role' => 'user',
         'theme' => 'light',
+        'book_view' => 'grid',
     ];
 
     /**
