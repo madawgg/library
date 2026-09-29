@@ -6,9 +6,10 @@ use App\Services\UserAccountService;
 use App\Services\UserRoleService;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\Title;
 use Livewire\Volt\Component;
 
-new class extends Component {
+new #[Title('Editar usuario')] class extends Component {
     #[Locked]
     public User $user;
 
@@ -57,7 +58,7 @@ new class extends Component {
 
     <form wire:submit="save" class="space-y-6">
         <flux:input wire:model="name" :label="__('Nombre')" type="text" required autocomplete="off" />
-        <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="off" />
+        <flux:input wire:model="email" :label="__('Correo electrónico')" type="email" required autocomplete="off" />
 
         @can('assignRole', [App\Models\User::class, App\Enums\Role::Admin])
             <flux:select wire:model="role" :label="__('Rol')">

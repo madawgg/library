@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '../../vendor/livewire/flux/dist/flux.css';
+@import './fonts.css';
 
 @source "../views";
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -8,42 +9,107 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * "Papel, tinta y cuero" palette (spec 003, RF-02).
+ * Every text/background pair used in the interface meets WCAG 2.2 AA in both themes.
+ */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Source Sans 3', ui-sans-serif, system-ui, sans-serif;
+    --font-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
 
-    --color-zinc-50: #fafafa;
-    --color-zinc-100: #f5f5f5;
-    --color-zinc-200: #e5e5e5;
-    --color-zinc-300: #d4d4d4;
-    --color-zinc-400: #a3a3a3;
-    --color-zinc-500: #737373;
-    --color-zinc-600: #525252;
-    --color-zinc-700: #404040;
-    --color-zinc-800: #262626;
-    --color-zinc-900: #171717;
-    --color-zinc-950: #0a0a0a;
+    /* Light theme tokens */
+    --color-paper: #f6efe0;
+    --color-surface: #fbf7ee;
+    --color-ink: #221910;
+    --color-ink-muted: #5f4d38;
+    --color-leather: #7b2d26;
+    --color-english-green: #24503c;
+    --color-field-border: #8a7457;
+    --color-danger: #9b1c1c;
 
-    --color-accent: var(--color-neutral-800);
-    --color-accent-content: var(--color-neutral-800);
-    --color-accent-foreground: var(--color-white);
+    /* Warm scale used by Flux components instead of the neutral zinc. */
+    --color-zinc-50: #fbf7ee;
+    --color-zinc-100: #f3ebdb;
+    --color-zinc-200: #e6d9c0;
+    --color-zinc-300: #d3c1a0;
+    --color-zinc-400: #a8916f;
+    --color-zinc-500: #6f5b42;
+    --color-zinc-600: #5f4d38;
+    --color-zinc-700: #46372a;
+    --color-zinc-800: #2f241b;
+    --color-zinc-900: #211811;
+    --color-zinc-950: #150f0a;
+
+    /* Reds used by Flux danger buttons and errors: white text on red-500 needs 4.5:1. */
+    --color-red-400: #b42318;
+    --color-red-500: #9b1c1c;
+    --color-red-600: #7f1616;
+
+    --color-accent: var(--color-leather);
+    --color-accent-content: var(--color-leather);
+    --color-accent-foreground: var(--color-surface);
 }
 
 @layer theme {
     .dark {
-        --color-accent: var(--color-white);
-        --color-accent-content: var(--color-white);
-        --color-accent-foreground: var(--color-neutral-800);
+        /* Dark theme tokens: dark wood and ivory */
+        --color-paper: #211811;
+        --color-surface: #2f241b;
+        --color-ink: #f2e8d5;
+        --color-ink-muted: #c9b89c;
+        --color-leather: #e3a79c;
+        --color-english-green: #8fc4a6;
+        --color-field-border: #8a7457;
+        --color-danger: #f19b8f;
+        --color-red-400: #f19b8f;
+        --color-red-500: #c24135;
+        --color-red-600: #a8362c;
+
+        --color-accent: var(--color-leather);
+        --color-accent-content: var(--color-leather);
+        --color-accent-foreground: #211811;
     }
 }
 
 @layer base {
-
     *,
     ::after,
     ::before,
     ::backdrop,
     ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
+        border-color: var(--color-zinc-200, currentColor);
+    }
+
+    html {
+        font-size: 100%;
+    }
+
+    body {
+        @apply bg-paper font-sans text-base text-ink antialiased;
+    }
+
+    h1,
+    h2,
+    h3,
+    [data-flux-heading] {
+        font-family: var(--font-serif);
+        font-weight: 600;
+        letter-spacing: 0.01em;
+    }
+
+    a {
+        text-underline-offset: 0.2em;
+    }
+
+    /* Visible focus on every interactive element (RF-10). */
+    :focus-visible {
+        outline: 3px solid var(--color-english-green);
+        outline-offset: 2px;
+    }
+
+    /* The focused element is never hidden behind the sticky header (RF-10). */
+    html {
+        scroll-padding-top: 5rem;
     }
 }
 
@@ -52,15 +118,38 @@
 }
 
 [data-flux-label] {
-    @apply  !mb-0 !leading-tight;
+    @apply !mb-0 !leading-tight;
+}
+
+/* Form controls need a 3:1 boundary against their background (WCAG 1.4.11). */
+input[data-flux-control],
+textarea[data-flux-control],
+select[data-flux-control],
+[data-flux-control] > button,
+button[data-flux-control] {
+    border-color: var(--color-field-border) !important;
 }
 
 input:focus[data-flux-control],
 textarea:focus[data-flux-control],
 select:focus[data-flux-control] {
-    @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
+    @apply outline-hidden ring-2 ring-english-green ring-offset-2 ring-offset-paper;
 }
 
-/* \[:where(&)\]:size-4 {
-    @apply size-4;
-} */
+/* Minimum target size of 24x24 px (WCAG 2.5.8). */
+button,
+[role='button'],
+input[type='checkbox'],
+input[type='radio'],
+select {
+    min-height: 24px;
+    min-width: 24px;
+}
+
+.skip-link {
+    @apply sr-only;
+}
+
+.skip-link:focus {
+    @apply not-sr-only fixed top-2 left-2 z-50 rounded-md bg-surface px-4 py-2 text-ink shadow-lg;
+}

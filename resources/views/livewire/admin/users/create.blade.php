@@ -5,9 +5,10 @@ use App\Models\User;
 use App\Services\UserAccountService;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
+use Livewire\Attributes\Title;
 use Livewire\Volt\Component;
 
-new class extends Component {
+new #[Title('Nuevo usuario')] class extends Component {
     public string $name = '';
     public string $email = '';
     public string $password = '';
@@ -43,7 +44,7 @@ new class extends Component {
 
     <form wire:submit="save" class="space-y-6">
         <flux:input wire:model="name" :label="__('Nombre')" type="text" required autocomplete="off" />
-        <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="off" />
+        <flux:input wire:model="email" :label="__('Correo electrónico')" type="email" required autocomplete="off" />
         <flux:input wire:model="password" :label="__('Contraseña')" type="password" required autocomplete="new-password" />
         <flux:input wire:model="password_confirmation" :label="__('Confirmar contraseña')" type="password" required autocomplete="new-password" />
 

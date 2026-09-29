@@ -40,3 +40,30 @@
     - La acción `Logout` pasa a `LogoutController`.
     - `initials()` sale del modelo `User`.
   - Verificación: `php artisan test` → 57 tests en verde (167 assertions); `pint --test` sin incidencias; en el navegador, el super admin entra y ve el panel con las acciones correctas.
+- Repositorio git inicializado (rama `main`). Primer commit `d736164`.
+- **Implementada la base visual de la spec 003** con TDD (`tests/Feature/Interface/VisualBaseTest.php`, 17 tests):
+  - Tema:
+    - Columna `theme` (migración `add_theme_to_users_table`) y enum `App\Enums\Theme`.
+    - `UserPreferenceService` decide el tema: el claro para invitados y cuentas nuevas.
+    - Apariencia solo ofrece Claro y Oscuro y lo guarda en la cuenta.
+    - Se quitan `@fluxAppearance`, el `localStorage` y la clase `dark` que venía fija en el `<html>`.
+  - Fuentes:
+    - Cormorant Garamond (títulos) y Source Sans 3 (interfaz), de Google Fonts con licencia OFL. Se descargan en `resources/fonts` con sus licencias y se sirven desde el propio servidor mediante `resources/css/fonts.css`.
+    - Se quita la carga desde `fonts.bunny.net`.
+  - Paleta "papel, tinta y cuero":
+    - Tokens en `app.css` para los dos temas, escala `zinc` en tonos cálidos para Flux y rojos ajustados. El rojo por defecto de Flux daba 3,81:1 con texto blanco.
+    - Todos los pares de color medidos cumplen WCAG 2.2 AA.
+    - Bordes de campo con contraste de 3:1, foco visible en verde inglés y objetivos de 24 px como mínimo.
+  - Estructura:
+    - Cabecera superior con la marca en texto, "Inicio", "Usuarios" (solo admins) y menú de cuenta (Perfil, Contraseña, Apariencia, Cerrar sesión).
+    - Menú móvil accesible con teclado: el foco entra al abrirlo, y Escape lo cierra y devuelve el foco al botón.
+    - Enlace "Saltar al contenido" en todas las páginas.
+    - Títulos con el formato "<página> · Biblioteca Personal".
+    - `/` redirige al inicio o al login. Se eliminan la portada de Laravel y los layouts y componentes del kit que no se usan.
+  - Idioma:
+    - `lang/es` (validation, auth, passwords, pagination) y `lang/es.json` (correos, errores y paginación).
+    - Pantallas del kit traducidas y `config/app.php` con `es` y "Biblioteca Personal" por defecto.
+  - Borrados los tests de ejemplo del kit. Uno comprobaba que `/` devolvía 200, algo que ya no es así por decisión de la spec.
+  - Verificación:
+    - `php artisan test`: 72 tests en verde (226 assertions). `pint --test` sin incidencias.
+    - En el navegador: tema claro y oscuro, menú móvil con teclado, fuentes cargadas solo desde localhost y ninguna petición externa.

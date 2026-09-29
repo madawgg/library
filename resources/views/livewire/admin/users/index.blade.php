@@ -2,9 +2,10 @@
 
 use App\Models\User;
 use App\Services\UserAccountService;
+use Livewire\Attributes\Title;
 use Livewire\Volt\Component;
 
-new class extends Component {
+new #[Title('Usuarios')] class extends Component {
     public function mount(): void
     {
         $this->authorize('viewAny', User::class);
@@ -42,7 +43,7 @@ new class extends Component {
             <thead>
                 <tr class="border-b border-zinc-200 dark:border-zinc-700">
                     <th scope="col" class="py-3 pe-4 font-medium">{{ __('Nombre') }}</th>
-                    <th scope="col" class="py-3 pe-4 font-medium">{{ __('Email') }}</th>
+                    <th scope="col" class="py-3 pe-4 font-medium">{{ __('Correo electrónico') }}</th>
                     <th scope="col" class="py-3 pe-4 font-medium">{{ __('Rol') }}</th>
                     <th scope="col" class="py-3 font-medium"><span class="sr-only">{{ __('Acciones') }}</span></th>
                 </tr>

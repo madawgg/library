@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\Role;
+use App\Enums\Theme;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -46,6 +47,7 @@ class User extends Authenticatable // implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => Role::class,
+            'theme' => Theme::class,
         ];
     }
 
@@ -56,5 +58,6 @@ class User extends Authenticatable // implements MustVerifyEmail
      */
     protected $attributes = [
         'role' => 'user',
+        'theme' => 'light',
     ];
 }

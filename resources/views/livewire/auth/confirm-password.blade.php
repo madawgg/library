@@ -3,9 +3,10 @@
 use App\Services\AuthenticationService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Volt\Component;
 
-new #[Layout('components.layouts.auth')] class extends Component {
+new #[Layout('components.layouts.auth')] #[Title('Confirmar contraseña')] class extends Component {
     public string $password = '';
 
     /**
@@ -25,8 +26,8 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
 <div class="flex flex-col gap-6">
     <x-auth-header
-        title="Confirm password"
-        description="This is a secure area of the application. Please confirm your password before continuing."
+        :title="__('Confirmar contraseña')"
+        :description="__('Es una zona protegida. Confirma tu contraseña para continuar.')"
     />
 
     <!-- Session Status -->
@@ -38,15 +39,15 @@ new #[Layout('components.layouts.auth')] class extends Component {
             <flux:input
                 wire:model="password"
                 id="password"
-                label="{{ __('Password') }}"
+                label="{{ __('Contraseña') }}"
                 type="password"
                 name="password"
                 required
                 autocomplete="new-password"
-                placeholder="Password"
+                :placeholder="__('Contraseña')"
             />
         </div>
 
-        <flux:button variant="primary" type="submit" class="w-full">{{ __('Confirm') }}</flux:button>
+        <flux:button variant="primary" type="submit" class="w-full">{{ __('Confirmar') }}</flux:button>
     </form>
 </div>

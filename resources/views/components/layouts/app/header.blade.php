@@ -1,120 +1,69 @@
 @inject('userDisplay', 'App\Services\UserDisplayService')
+@inject('preferences', 'App\Services\UserPreferenceService')
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="{{ $preferences->themeFor(auth()->user())->cssClass() }}">
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-white dark:bg-zinc-800">
-        <flux:header container class="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
+    <body class="min-h-screen">
+        <a href="#contenido-principal" class="skip-link">{{ __('Saltar al contenido') }}</a>
 
-            <a href="{{ route('dashboard') }}" class="ml-2 mr-5 flex items-center space-x-2 lg:ml-0" wire:navigate>
-                <x-app-logo class="size-8" href="#"></x-app-logo>
+        <flux:header container class="sticky top-0 z-30 border-b border-zinc-200 bg-surface dark:border-zinc-700">
+            <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" :aria-label="__('Abrir menú')" data-mobile-menu-open />
+
+            <a href="{{ route('dashboard') }}" class="ms-2 me-6 font-serif text-2xl font-semibold text-ink lg:ms-0" wire:navigate>
+                {{ config('app.name') }}
             </a>
 
-            <flux:navbar class="-mb-px max-lg:hidden">
-                <flux:navbar.item icon="layout-grid" href="{{ route('dashboard') }}" :current="request()->routeIs('dashboard')" wire:navigate>
-                    Dashboard
-                </flux:navbar.item>
+            <flux:navbar class="-mb-px max-lg:hidden" :aria-label="__('Navegación principal')">
+                @include('partials.main-navigation', ['variant' => 'navbar'])
             </flux:navbar>
 
             <flux:spacer />
 
-            <flux:navbar class="mr-1.5 space-x-0.5 py-0!">
-                <flux:tooltip content="Search" position="bottom">
-                    <flux:navbar.item class="!h-10 [&>div>svg]:size-5" icon="magnifying-glass" href="#" label="Search" />
-                </flux:tooltip>
-                <flux:tooltip content="Repository" position="bottom">
-                    <flux:navbar.item
-                        class="h-10 max-lg:hidden [&>div>svg]:size-5"
-                        icon="folder-git-2"
-                        href="https://github.com/laravel/livewire-starter-kit"
-                        target="_blank"
-                        label="Repository"
-                    />
-                </flux:tooltip>
-                <flux:tooltip content="Documentation" position="bottom">
-                    <flux:navbar.item
-                        class="h-10 max-lg:hidden [&>div>svg]:size-5"
-                        icon="book-open-text"
-                        href="https://laravel.com/docs/starter-kits"
-                        target="_blank"
-                        label="Documentation"
-                    />
-                </flux:tooltip>
-            </flux:navbar>
-
-            <!-- Desktop User Menu -->
-            <flux:dropdown position="top" align="end">
+            <flux:dropdown position="bottom" align="end">
                 <flux:profile
                     class="cursor-pointer"
                     :initials="$userDisplay->initials(auth()->user())"
+                    icon-trailing="chevron-down"
+                    :aria-label="__('Menú de la cuenta')"
                 />
 
                 <flux:menu>
-                    <flux:menu.radio.group>
-                        <div class="p-0 text-sm font-normal">
-                            <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                                <span class="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg">
-                                    <span
-                                        class="flex h-full w-full items-center justify-center rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white"
-                                    >
-                                        {{ $userDisplay->initials(auth()->user()) }}
-                                    </span>
-                                </span>
-
-                                <div class="grid flex-1 text-left text-sm leading-tight">
-                                    <span class="truncate font-semibold">{{ auth()->user()->name }}</span>
-                                    <span class="truncate text-xs">{{ auth()->user()->email }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </flux:menu.radio.group>
+                    <div class="px-2 py-1.5 text-sm leading-tight">
+                        <span class="block truncate font-semibold">{{ auth()->user()->name }}</span>
+                        <span class="block truncate text-xs text-ink-muted">{{ auth()->user()->email }}</span>
+                    </div>
 
                     <flux:menu.separator />
 
-                    <flux:menu.radio.group>
-                        <flux:menu.item href="/settings/profile" icon="cog" wire:navigate>Settings</flux:menu.item>
-                    </flux:menu.radio.group>
-
-                    <flux:menu.separator />
-
-                    <form method="POST" action="{{ route('logout') }}" class="w-full">
-                        @csrf
-                        <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">
-                            {{ __('Log Out') }}
-                        </flux:menu.item>
-                    </form>
+                    @include('partials.account-navigation', ['variant' => 'menu'])
                 </flux:menu>
             </flux:dropdown>
         </flux:header>
 
-        <!-- Mobile Menu -->
-        <flux:sidebar stashable sticky class="lg:hidden border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
+        <!-- Mobile menu -->
+        {{-- Keyboard support for the mobile menu (spec 003, CA-07): focus moves into it when it opens,
+             and Escape closes it and returns focus to its toggle. --}}
+        <flux:sidebar
+            stashable
+            sticky
+            class="border-e border-zinc-200 bg-surface lg:hidden dark:border-zinc-700"
+            x-on:flux-sidebar-toggle.window="$nextTick(() => { if (! $el.hasAttribute('data-flux-sidebar-collapsed-mobile')) $el.querySelector('nav a, nav button')?.focus() })"
+            x-on:keydown.escape.window="if (! $el.hasAttribute('data-flux-sidebar-collapsed-mobile')) { $dispatch('flux-sidebar-toggle'); document.querySelector('[data-mobile-menu-open]')?.focus() }"
+        >
+            <flux:sidebar.toggle class="lg:hidden" icon="x-mark" :aria-label="__('Cerrar menú')" />
 
-            <a href="{{ route('dashboard') }}" class="ml-1 flex items-center space-x-2" wire:navigate>
-                <x-app-logo class="size-8" href="#"></x-app-logo>
-            </a>
+            <span class="ms-1 font-serif text-xl font-semibold text-ink">{{ config('app.name') }}</span>
 
-            <flux:navlist variant="outline">
-                <flux:navlist.group heading="Platform">
-                    <flux:navlist.item icon="layout-grid" href="{{ route('dashboard') }}" :current="request()->routeIs('dashboard')" wire:navigate>
-                        Dashboard
-                    </flux:navlist.item>
-                </flux:navlist.group>
+            <flux:navlist variant="outline" :aria-label="__('Navegación principal')">
+                @include('partials.main-navigation', ['variant' => 'navlist'])
             </flux:navlist>
 
             <flux:spacer />
 
-            <flux:navlist variant="outline">
-                <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                    Repository
-                </flux:navlist.item>
-
-                <flux:navlist.item icon="book-open-text" href="https://laravel.com/docs/starter-kits" target="_blank">
-                    Documentation
-                </flux:navlist.item>
+            <flux:navlist variant="outline" :aria-label="__('Cuenta')">
+                @include('partials.account-navigation', ['variant' => 'navlist'])
             </flux:navlist>
         </flux:sidebar>
 

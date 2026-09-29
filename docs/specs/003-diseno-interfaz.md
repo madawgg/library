@@ -137,5 +137,9 @@ Los préstamos marcados con tiempo superado (spec 002) se muestran de tres forma
 
 ## Decisiones tomadas
 
+- No hay portada pública: la ruta `/` lleva al inicio si hay sesión y al login si no.
+- Fuentes: Cormorant Garamond (títulos) y Source Sans 3 (interfaz).
+- Las preferencias del usuario (tema y, más adelante, la vista del listado) se guardan en columnas de la tabla `users`.
+- Traducciones: archivos propios en `lang/es`, sin paquetes externos.
 - Las fuentes se eligen de Google Fonts. Si su licencia permite descargarlas gratis, se descargan y se sirven desde el propio servidor; si no, se cargan desde Google Fonts.
 - Los correos tienen el estilo de la app, sin sobrecargarlos y dando prioridad a la lectura y a los enlaces.
