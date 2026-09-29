@@ -1,0 +1,42 @@
+# Log de cambios
+
+## 2026-09-29
+
+- Redactada `docs/constitution.md`: propósito, stack (Laravel 12 + Blade + Tailwind + MySQL), roles usuario/administrador y autorización, TDD estricto con PHPUnit, accesibilidad WCAG 2.2 AA, convenciones de idioma y código, diseño visual, persistencia y flujo de trabajo.
+- Actualizada `docs/constitution.md`: stack con el starter kit de Livewire y PHPUnit; tres roles (usuario, administrador y super administrador único).
+- Creada `docs/specs/001-usuarios-y-roles.md` (borrador): cuenta, roles, super administrador, comandos artisan, panel de gestión de usuarios y criterios de aceptación. Verificación de email preparada pero no activada.
+- Instalado el esqueleto: Laravel 12 + starter kit de Livewire (Flux + Volt) con PHPUnit.
+  - Base de datos MySQL `biblioteca_personal` (servicio MySQL80) creada y migrada. `.env` con `APP_NAME`, `APP_URL` y locale `es`.
+  - Livewire fijado a `^3.7.4` (instalado 3.8.10): Composer había resuelto Livewire 4, incompatible con las vistas del kit (error 500 en las páginas de ajustes).
+  - Eliminado `tests/Pest.php` (residuo del installer; Pest no está instalado).
+  - Formateado con Pint el código generado.
+  - Verificación: `php artisan test` → 27 tests en verde; `pint --test` → sin incidencias; páginas públicas responden 200 y las protegidas redirigen al login.
+- Spec 001: resueltas las preguntas abiertas. La contraseña la fija quien crea la cuenta, el super admin elige el rol al crear, los comandos son `admin:grant`/`admin:revoke` y los libros se eliminan en cascada.
+- Creada `docs/specs/002-libros.md` (borrador): datos del libro, alta rápida y edición completa, portada (cámara o archivo, WebP ≤1200 px y ≤2 MB), ISBN con aviso de duplicado por biblioteca, listados de usuario y de administración, borrado y cascada.
+- Spec 002: resueltas las preguntas abiertas. Filtros de ubicación por nivel con prioridad a estantería, orden por defecto de más recientes primero, historial de préstamos con datos obligatorios, portada que se puede quitar, compresión con vista previa y confirmación, y opción "Sin especificar" en los filtros.
+- Spec 002 cerrada: filtros de texto con coincidencia parcial, fecha de devolución automática, y préstamos que solo pueden editar o borrar los administradores.
+- Spec 002: añadido el indicador booleano de tiempo superado para préstamos activos de más de 2 meses, que se usará en la spec de interfaz. La comprobación es diaria a las 2:00 y los días prestado se calculan sin guardarse en la base de datos.
+- Spec 002 cerrada sin preguntas abiertas: la marca de tiempo superado se quita al devolver el libro, y los días prestado cuentan hasta hoy en préstamos activos.
+- Spec 002 modificada: la ubicación pasa de texto libre a estructurada (hueco de una estantería del propietario, "todo o nada") y se añade el campo posición. Los filtros de ubicación pasan a ser selectores.
+- Creada `docs/specs/004-estanteria-virtual.md` (borrador): salas, estanterías con huecos por balda, vista estantería (≥1280 px) con mesa de libros sin ubicación, arrastrar y soltar, y alternativas accesibles "Mover a…" y "Seleccionar y colocar".
+- Spec 004 cerrada: borrado de sala en cascada hacia la mesa, nombre opcional en baldas y huecos, mesa alfabética paginada de 8 en 8 con flechas, y libros dibujados como lomos.
+- Creada `docs/specs/003-diseno-interfaz.md` (borrador): estilo editorial clásico (serif en títulos y sans en texto, paleta papel/tinta/cuero), tema claro por defecto y oscuro guardados por usuario, cabecera superior con marca en texto, inicio con resumen, selector de vista guardado por usuario, alerta de préstamo vencido (distintivo, aviso y filtro), enlace al historial en la ficha del libro, y todo en español.
+- Spec 003 cerrada: fuentes solo de Google Fonts, descargadas y servidas desde el propio servidor si su licencia lo permite (si no, se cargan desde Google Fonts), y correos con el estilo de la app, sin sobrecargar y con prioridad a la lectura y los enlaces.
+- Las cuatro specs pasan a estado "aprobada".
+- Constitución: nueva sección 8, "Arquitectura por capas". La lógica de negocio va en services; los modelos solo tienen relaciones y configuración de Eloquent; los controladores y componentes Volt son finos; las Policies delegan en los services. La validación en Volt se hace con `validate()`.
+- **Implementada la spec 001 (usuarios y roles)** con TDD:
+  - Rol: columna `role` (migración `add_role_to_users_table`) y enum `App\Enums\Role` (user, admin, super_admin).
+  - Services:
+    - `UserRoleService`: reglas de roles, cambio de rol y creación del super admin.
+    - `UserAccountService`: registro, altas, perfil, contraseña y borrado protegido.
+    - `AuthenticationService`, `PasswordResetService`, `EmailVerificationService` y `UserDisplayService`.
+  - `UserPolicy` (viewAny, create, update, delete, assignRole, deleteOwnAccount), que delega en `UserRoleService`.
+  - `SuperAdminSeeder`: toma las credenciales de `SUPER_ADMIN_*` en el `.env`, que se leen en `config/auth.php`. El Test User solo se crea en local.
+  - Comandos `admin:grant {email}` y `admin:revoke {email}`.
+  - Panel `/admin/users` (Volt: index, create, edit) con enlace "Usuarios" en la navegación para admins.
+  - El super admin no ve la opción de borrar su cuenta, y el service impide borrarlo por cualquier vía.
+  - Refactor del kit a la arquitectura por capas:
+    - Login, registro, contraseñas, verificación, perfil y borrado de cuenta ahora delegan en services.
+    - La acción `Logout` pasa a `LogoutController`.
+    - `initials()` sale del modelo `User`.
+  - Verificación: `php artisan test` → 57 tests en verde (167 assertions); `pint --test` sin incidencias; en el navegador, el super admin entra y ve el panel con las acciones correctas.
