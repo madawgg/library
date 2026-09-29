@@ -35,6 +35,18 @@ El seeder crea el único super administrador. Si ya existe uno, no crea otro. En
 - Tests: `php artisan test`
 - Formato: `./vendor/bin/pint`
 
+## Tareas programadas
+
+Todos los días a las 2:00, `loans:check-overdue` marca como vencidos los préstamos activos de más de 2 meses. Para que se ejecute, el servidor necesita el cron de Laravel:
+
+```bash
+* * * * * cd /ruta/al/proyecto && php artisan schedule:run >> /dev/null 2>&1
+```
+
+## Portadas
+
+Las portadas se guardan como WebP en `storage/app/private/covers`. No son públicas: se sirven con una ruta que comprueba que quien las pide puede ver el libro. Los límites están en `config/books.php`.
+
 ## Roles
 
 | Rol | Cómo se obtiene |

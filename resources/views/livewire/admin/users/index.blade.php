@@ -57,6 +57,9 @@ new #[Title('Usuarios')] class extends Component {
                         <td class="py-3">
                             <div class="flex justify-end gap-2">
                                 @can('manageLibrary', $user)
+                                    <flux:button size="sm" variant="ghost" :href="route('admin.users.books', $user)" wire:navigate>
+                                        {{ __('Libros') }}<span class="sr-only"> {{ __('de :name', ['name' => $user->name]) }}</span>
+                                    </flux:button>
                                     <flux:button size="sm" variant="ghost" :href="route('admin.users.rooms', $user)" wire:navigate>
                                         {{ __('Salas y estanterías') }}<span class="sr-only"> {{ __('de :name', ['name' => $user->name]) }}</span>
                                     </flux:button>

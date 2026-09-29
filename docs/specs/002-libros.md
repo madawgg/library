@@ -216,3 +216,7 @@ La ubicación es "todo o nada": o el libro está en un hueco concreto, del que s
 - La portada se puede quitar sin sustituirla.
 - Una portada de más de 2 MB tras la conversión se comprime, se muestra una vista previa y se guarda solo si la persona confirma.
 - Los filtros de estado, condición y ubicación incluyen la opción "Sin especificar".
+- Las portadas se procesan con la extensión GD de PHP, sin librerías externas.
+- Las portadas son privadas: se sirven mediante una ruta que comprueba que quien las pide puede ver el libro.
+- Si el libro sigue prestado y se cambian "prestado a" o la fecha en la edición, se corrige el préstamo activo; no se crea uno nuevo.
+- Persistencia: tabla `books` (con `reading_status`, `condition`, `compartment_id` y `position`) y tabla `loans` para el historial de préstamos.

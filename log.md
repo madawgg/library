@@ -87,3 +87,40 @@
   - Verificación:
     - `php artisan test`: 93 tests en verde. `pint --test` sin incidencias.
     - En el navegador, con el Test User: creada la sala "Salón" y la estantería "Estantería grande" con 3 baldas de 2, 4 y 3 huecos.
+- Commit `2de9b88` (salas y estanterías).
+- Spec 002: decisiones añadidas. Portadas con GD y privadas; si el libro sigue prestado, editar sus datos corrige el préstamo activo; tablas `books` y `loans`.
+- **Implementada la spec 002 (libros)** con TDD, en cuatro fases. Son 75 tests en `tests/Feature/Books/`:
+  1. **Núcleo:**
+     - Tabla `books` y enums `ReadingStatus` y `BookCondition`.
+     - Services:
+       - `BookService`: alta, edición y borrado.
+       - `IsbnService`: valida ISBN-10/13, normaliza y detecta duplicados solo en la biblioteca del propietario.
+       - `BookLocationService`: coloca el libro al final del hueco, renumera las posiciones y mueve libros a la mesa.
+     - `BookPolicy` y la regla `ValidIsbn`.
+     - Pantallas:
+       - Formulario de libro: alta rápida y edición completa con ubicación encadenada.
+       - Ficha del libro.
+       - "Mis libros" y la biblioteca de cada usuario para los admins, con enlace "Libros" en el panel de usuarios.
+     - Aviso de ISBN duplicado con "Guardar igualmente".
+     - **Criterios aplazados de la 004 cubiertos:** los libros pasan a la mesa al quitar baldas o huecos o al borrar una estantería o una sala.
+  2. **Portadas:**
+     - `CoverImageService` (GD): convierte a WebP, limita a 1200 px sin agrandar, corrige la orientación EXIF y reduce la calidad si pasa de 2 MB. En ese caso la persona tiene que aceptar la vista previa.
+     - `BookCoverService`: guardado privado en `storage/app/private/covers`, servido por `/books/{book}/cover` con permiso.
+     - Opciones "Hacer una foto" (solo en pantallas táctiles) y "Elegir un archivo".
+     - Se puede quitar la portada. El archivo se borra al borrar el libro o la cuenta.
+     - Configuración en `config/books.php`.
+  3. **Préstamos:**
+     - Tabla `loans` y `LoanService`: al marcar Prestado se abre un préstamo (o se corrige el activo); al cambiar de estado se registra la devolución de ese día y se quita la marca de vencido.
+     - Los días prestado se calculan sin guardarse.
+     - Comando `loans:check-overdue`, programado a diario a las 2:00.
+     - Historial en `/books/{book}/loans`, con enlace discreto en la ficha. Solo los admins pueden editar o borrar préstamos (`LoanPolicy`).
+     - Decisión de implementación: el préstamo en curso de un libro prestado no se puede borrar; primero hay que devolverlo.
+  4. **Listados:**
+     - `BookCatalogService`: búsqueda por título o autor, con los que coinciden por título primero.
+     - Filtros: género (parcial), estado y condición (con "Sin especificar"), y ubicación por nivel, con la estantería primero y "en la mesa".
+     - Orden por fecha de alta, título o autor, y 15 libros por página. Los filtros quedan en la URL.
+     - Listado global `/admin/books` con filtro por propietario y enlace "Todos los libros" para los admins.
+  - Verificación:
+    - `php artisan test`: 168 tests en verde. `pint --test` sin incidencias.
+    - En el navegador, sobre MySQL: alta con ISBN, edición con ubicación encadenada, subida de portada (1600×2400 → 800×1200 WebP), préstamo, `loans:check-overdue` marcando el vencido, historial con 76 días y filtros por URL.
+  - Pendiente: los archivos de portada que quedan en `covers/pending` si alguien abandona el formulario no se limpian solos.

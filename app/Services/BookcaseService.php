@@ -3,9 +3,12 @@
 namespace App\Services;
 
 use App\Models\Bookcase;
+use App\Models\Compartment;
 use App\Models\Room;
 use App\Models\Shelf;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -17,6 +20,8 @@ use InvalidArgumentException;
  */
 class BookcaseService
 {
+    public function __construct(private BookLocationService $locations) {}
+
     /**
      * @param  list<array{name: ?string, compartment_names: list<?string>}>  $structure
      */
@@ -54,9 +59,15 @@ class BookcaseService
         });
     }
 
+    /**
+     * Delete the bookcase; its books move to the table.
+     */
     public function delete(Bookcase $bookcase): void
     {
-        $bookcase->delete();
+        DB::transaction(function () use ($bookcase) {
+            $this->locations->moveToTable($bookcase->compartments()->pluck('compartments.id'));
+            $bookcase->delete();
+        });
     }
 
     public function ownerOf(Bookcase $bookcase): User
@@ -108,10 +119,23 @@ class BookcaseService
                 );
             }
 
-            $shelf->compartments()->where('number', '>', count($shelfData['compartment_names']))->delete();
+            $this->deleteCompartments($shelf->compartments()->where('number', '>', count($shelfData['compartment_names'])));
         }
 
-        $bookcase->shelves()->where('number', '>', count($structure))->delete();
+        $removedShelves = $bookcase->shelves()->where('number', '>', count($structure));
+        $this->deleteCompartments(Compartment::whereIn('shelf_id', (clone $removedShelves)->select('id')));
+        $removedShelves->delete();
+    }
+
+    /**
+     * Delete compartments after moving their books to the table (spec 004, RF-04).
+     *
+     * @param  Builder<Compartment>|HasMany<Compartment, Shelf>  $compartments
+     */
+    private function deleteCompartments(Builder|HasMany $compartments): void
+    {
+        $this->locations->moveToTable((clone $compartments)->pluck('id'));
+        $compartments->delete();
     }
 
     private function optionalName(?string $name): ?string

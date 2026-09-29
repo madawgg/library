@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BookCoverController;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
@@ -18,6 +19,16 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
 });
 
+// Books (spec 002).
+Route::middleware(['auth'])->group(function () {
+    Volt::route('books', 'books.index')->name('books.index');
+    Volt::route('books/create', 'books.form')->name('books.create');
+    Volt::route('books/{book}', 'books.show')->middleware('can:view,book')->name('books.show');
+    Volt::route('books/{book}/edit', 'books.form')->middleware('can:update,book')->name('books.edit');
+    Volt::route('books/{book}/loans', 'books.loans')->middleware('can:view,book')->name('books.loans');
+    Route::get('books/{book}/cover', BookCoverController::class)->middleware('can:view,book')->name('books.cover');
+});
+
 // Library structure: rooms, bookcases, shelves and compartments (spec 004).
 Route::middleware(['auth'])->group(function () {
     Volt::route('rooms', 'shelving.index')->name('rooms.index');
@@ -32,6 +43,15 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Volt::route('books', 'books.index')
+        ->middleware('can:viewAny,App\Models\User')
+        ->defaults('allLibraries', true)
+        ->name('books.index');
+
+    Volt::route('users/{user}/books', 'books.index')
+        ->middleware('can:manageLibrary,user')
+        ->name('users.books');
+
     Volt::route('users/{user}/rooms', 'shelving.index')
         ->middleware('can:manageLibrary,user')
         ->name('users.rooms');

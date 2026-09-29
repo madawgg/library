@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Book;
 use App\Models\Bookcase;
 use App\Models\Room;
 use App\Models\User;
@@ -28,5 +29,6 @@ class AppServiceProvider extends ServiceProvider
         Route::model('user', User::class);
         Route::model('room', Room::class);
         Route::model('bookcase', Bookcase::class);
+        Route::model('book', Book::class);
     }
 }

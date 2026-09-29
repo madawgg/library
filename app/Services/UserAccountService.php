@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Collection;
  */
 class UserAccountService
 {
-    public function __construct(private UserRoleService $roles) {}
+    public function __construct(private UserRoleService $roles, private BookCoverService $covers) {}
 
     /**
      * Public registration: the account always gets the user role.
@@ -72,7 +72,8 @@ class UserAccountService
     }
 
     /**
-     * Delete an account. The super administrator can never be deleted.
+     * Delete an account with its library: the books go with it and their cover files are removed.
+     * The super administrator can never be deleted.
      */
     public function deleteAccount(User $user): void
     {
@@ -80,6 +81,7 @@ class UserAccountService
             throw new SuperAdminProtectedException;
         }
 
+        $this->covers->removeAllOf($user);
         $user->delete();
     }
 }

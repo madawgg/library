@@ -69,4 +69,12 @@ class User extends Authenticatable // implements MustVerifyEmail
     {
         return $this->hasMany(Room::class);
     }
+
+    /**
+     * @return HasMany<Book, $this>
+     */
+    public function books(): HasMany
+    {
+        return $this->hasMany(Book::class);
+    }
 }
