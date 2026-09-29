@@ -5,6 +5,7 @@ use App\Models\Room;
 use App\Models\User;
 use App\Services\BookcaseService;
 use App\Services\RoomService;
+use App\Services\ShelfViewService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
@@ -86,11 +87,12 @@ new #[Title('Salas y estanterías')] class extends Component {
         $bookcases->delete($bookcase);
     }
 
-    public function with(RoomService $rooms): array
+    public function with(RoomService $rooms, ShelfViewService $shelfView): array
     {
         return [
             'rooms' => $rooms->roomsOf($this->owner),
             'isOwnLibrary' => $this->owner->is(Auth::user()),
+            'shelfView' => $shelfView,
         ];
     }
 }; ?>
@@ -122,7 +124,9 @@ new #[Title('Salas y estanterías')] class extends Component {
                         <flux:button type="button" size="sm" wire:click="cancelRenaming">{{ __('Cancelar') }}</flux:button>
                     </form>
                 @else
-                    <flux:heading size="lg" level="2" id="room-{{ $room->id }}-heading">{{ $room->name }}</flux:heading>
+                    <flux:heading size="lg" level="2" id="room-{{ $room->id }}-heading">
+                        <a href="{{ route('rooms.show', $room) }}" class="text-ink underline-offset-4 hover:underline" wire:navigate>{{ $room->name }}</a>
+                    </flux:heading>
 
                     <div class="flex flex-wrap gap-2">
                         <flux:button size="sm" :href="route('bookcases.create', $room)" wire:navigate>
@@ -150,7 +154,7 @@ new #[Title('Salas y estanterías')] class extends Component {
                     @foreach ($room->bookcases as $bookcase)
                         <li wire:key="bookcase-{{ $bookcase->id }}" class="flex flex-wrap items-center justify-between gap-3 py-3">
                             <div>
-                                <p class="font-semibold">{{ $bookcase->name }}</p>
+                                <a href="{{ $shelfView->linkFor($bookcase, auth()->user()) }}" class="font-semibold text-leather underline-offset-2 hover:underline" wire:navigate>{{ $bookcase->name }}</a>
                                 <p class="text-sm text-ink-muted">
                                     {{ trans_choice(':count balda|:count baldas', $bookcase->shelves_count) }}
                                     · {{ trans_choice(':count hueco|:count huecos', $bookcase->compartments_count) }}

@@ -33,6 +33,10 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth'])->group(function () {
     Volt::route('rooms', 'shelving.index')->name('rooms.index');
 
+    Volt::route('rooms/{room}', 'shelving.room')
+        ->middleware('can:update,room')
+        ->name('rooms.show');
+
     Volt::route('rooms/{room}/bookcases/create', 'shelving.bookcase-form')
         ->middleware('can:update,room')
         ->name('bookcases.create');

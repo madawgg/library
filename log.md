@@ -170,3 +170,25 @@
     - `php artisan test`: 208 tests en verde. `pint --test` sin incidencias.
     - En el navegador: inicio del Test User (en tema oscuro) con el préstamo vencido real.
     - Revisado el HTML generado del correo de recuperación.
+- Commit `af5e449` (resto de la spec 003).
+- Spec 005: añadidas M-03 (Mayús + clic abre la ficha desde la estantería), M-04 (lomos más finos), M-05 (filtros compactos con "Más filtros"), M-06 (vista de sala con tarjetas de estanterías) y M-07 (el nombre de la estantería lleva a su vista estantería), con sus preguntas abiertas.
+- Spec 005: resueltas las preguntas abiertas y añadidos sus criterios de aceptación. Pasa a "en implementación"; las mejoras nuevas irán en otra spec.
+- **Implementada la spec 005** con TDD. Son 12 tests nuevos en `tests/Feature/Improvements/ImprovementsTest.php`:
+  - M-01: solo el formulario de **edición** de libro ocupa todo el ancho y reparte los campos en 4 columnas en pantallas anchas. El de alta no cambia.
+  - M-02: la ficha del libro ocupa todo el ancho.
+  - M-03: Mayús + clic sobre un lomo abre la ficha. Se intercepta en la fase de captura, antes del menú de Flux. El clic normal sigue abriendo el menú.
+  - M-04: lomos de 24 px.
+  - M-05:
+    - En la línea principal quedan la búsqueda, "Ordenar por", "Orden", "Quitar filtros" y "Más filtros (n)".
+    - El resto de filtros, incluido el de propietario en el listado global, está en un panel desplegable con `aria-expanded`/`aria-controls`.
+  - M-06: vista de sala en `/rooms/{sala}`, con una tarjeta por estantería (dibujo de baldas y huecos, nombre y número de libros). `RoomService::bookcasesWithStructure()` calcula los libros de cada estantería con una sola consulta.
+  - M-07:
+    - El nombre de cada estantería y cada tarjeta enlazan a `?vista=estanteria&bookcase=ID`. A partir de 1280 px abren la vista estantería con esa estantería; en pantallas más estrechas, la tabla filtrada por ella.
+    - Si es un admin en las salas de otro usuario, el enlace lleva a la biblioteca de ese usuario (`ShelfViewService::linkFor()`).
+  - Verificación:
+    - `php artisan test`: 220 tests en verde. `pint --test` sin incidencias.
+    - En el navegador (con ventana emulada, porque el panel estaba oculto):
+      - Filtros en una línea, y el panel "Más filtros (1)" se abre.
+      - Tarjeta de sala → tabla filtrada a 1100 px y estantería seleccionada a 1440 px.
+      - Lomos de 24 px. Mayús + clic abre la ficha y el clic normal abre el menú.
+      - Formulario de edición a 4 columnas.

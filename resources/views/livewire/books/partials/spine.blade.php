@@ -7,14 +7,20 @@
     $spineColor = $spineColors[$book->id % count($spineColors)];
 @endphp
 
-<div class="group relative" wire:key="spine-{{ $book->id }}">
+{{-- Shift + click opens the book page (spec 005, M-03); a plain click keeps opening the menu. --}}
+<div
+    class="group relative"
+    wire:key="spine-{{ $book->id }}"
+    data-show-url="{{ route('books.show', $book) }}"
+    x-on:click.capture="if ($event.shiftKey) { $event.preventDefault(); $event.stopPropagation(); Livewire.navigate($el.dataset.showUrl) }"
+>
     <flux:dropdown position="bottom" align="start">
         <button
             type="button"
             data-spine="{{ $book->id }}"
             draggable="true"
             x-on:dragstart="$event.dataTransfer.setData('text/plain', '{{ $book->id }}'); $event.dataTransfer.effectAllowed = 'move'"
-            class="{{ $spineColor }} flex h-40 w-9 cursor-grab items-center justify-center overflow-hidden rounded-sm px-1 py-2 shadow-md {{ $selected ? 'ring-4 ring-english-green ring-offset-2' : '' }}"
+            class="{{ $spineColor }} flex h-40 w-6 cursor-grab items-center justify-center overflow-hidden rounded-sm px-0.5 py-2 shadow-md {{ $selected ? 'ring-4 ring-english-green ring-offset-2' : '' }}"
             aria-label="{{ $book->title }}{{ $book->author ? ', '.$book->author : '' }}. {{ __('Opciones del libro') }}"
         >
             <span class="truncate text-xs font-semibold [writing-mode:vertical-rl] rotate-180">{{ $book->title }}</span>

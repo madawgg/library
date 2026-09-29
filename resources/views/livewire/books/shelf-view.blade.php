@@ -36,12 +36,17 @@ new class extends Component {
     /** Last change, read out by screen readers. */
     public string $announcement = '';
 
-    public function mount(User $owner, ShelfViewService $shelfView): void
+    /**
+     * @param  int|null  $bookcase  bookcase to show first (links from "Salas y estanterías", spec 005 M-06/M-07)
+     */
+    public function mount(User $owner, ShelfViewService $shelfView, ?int $bookcase = null): void
     {
         $this->authorize('manageLibrary', $owner);
 
         $this->owner = $owner;
-        $this->bookcaseId = $shelfView->bookcasesOf($owner)->first()?->id;
+
+        $bookcases = $shelfView->bookcasesOf($owner);
+        $this->bookcaseId = $bookcases->firstWhere('id', $bookcase)?->id ?? $bookcases->first()?->id;
     }
 
     public function updatedRoomId(ShelfViewService $shelfView): void

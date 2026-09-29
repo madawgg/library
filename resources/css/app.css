@@ -172,6 +172,10 @@ select {
     min-width: 24px;
 }
 
+[x-cloak] {
+    display: none !important;
+}
+
 .skip-link {
     @apply sr-only;
 }

@@ -44,6 +44,21 @@ class ShelfViewService
     }
 
     /**
+     * Link to the shelf view of "Mis libros" showing this bookcase (spec 005, M-06 and M-07).
+     * Administrators managing someone else's rooms go to that user's library. On narrow screens
+     * the same link shows the table filtered by the bookcase.
+     */
+    public function linkFor(Bookcase $bookcase, User $actor): string
+    {
+        $owner = $bookcase->room->user;
+        $parameters = ['vista' => 'estanteria', 'bookcase' => $bookcase->id];
+
+        return $owner->is($actor)
+            ? route('books.index', $parameters)
+            : route('admin.users.books', ['user' => $owner, ...$parameters]);
+    }
+
+    /**
      * Books of the owner without a location, alphabetically, a page at a time.
      *
      * @return LengthAwarePaginator<int, Book>

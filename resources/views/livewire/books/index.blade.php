@@ -154,6 +154,10 @@ new class extends Component {
             'view' => $preferences->bookViewFor(Auth::user(), singleLibrary: ! $this->allLibraries),
             'viewOptions' => $this->allLibraries ? [BookView::Grid, BookView::Table] : BookView::cases(),
             'books' => $catalog->search($this->owner, $filters, $this->sort, $this->direction),
+            // Filters inside "Más filtros" that are in use (spec 005, M-05).
+            'activeMoreFilters' => collect([$this->genre, $this->status, $this->condition, $this->roomId, $this->bookcaseId, $this->shelfId, $this->compartmentId, $this->ownerFilter])
+                ->filter(fn (string $value) => $value !== '')
+                ->count() + (int) $this->overdueOnly,
             'isOwnLibrary' => $this->owner?->is(Auth::user()) ?? false,
             'unspecified' => BookCatalogService::UNSPECIFIED,
             'statuses' => ReadingStatus::cases(),
@@ -207,92 +211,115 @@ new class extends Component {
         @endforeach
     </div>
 
-    <form @class(['space-y-4 rounded-lg border border-zinc-200 bg-surface p-4 dark:border-zinc-700', 'xl:hidden' => $view === App\Enums\BookView::Shelf]) wire:submit.prevent role="search" aria-label="{{ __('Buscar y filtrar libros') }}">
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="sm:col-span-2">
+    {{-- Spec 005 (M-05): only search and sorting are visible; the other filters live in the "Más filtros" panel. --}}
+    <form
+        @class(['space-y-4 rounded-lg border border-zinc-200 bg-surface p-4 dark:border-zinc-700', 'xl:hidden' => $view === App\Enums\BookView::Shelf])
+        wire:submit.prevent
+        role="search"
+        aria-label="{{ __('Buscar y filtrar libros') }}"
+        x-data="{ moreFilters: false }"
+    >
+        <div data-filters-main class="flex flex-wrap items-end gap-3">
+            <div class="min-w-64 flex-1">
                 <flux:input wire:model.live.debounce.400ms="search" type="search" icon="magnifying-glass" :label="__('Buscar por título o autor')" />
             </div>
 
-            @if ($allLibraries)
-                <flux:select wire:model.live="ownerFilter" :label="__('Propietario')">
-                    <flux:select.option value="">{{ __('Todos') }}</flux:select.option>
-                    @foreach ($ownerOptions as $ownerOption)
-                        <flux:select.option value="{{ $ownerOption->id }}">{{ $ownerOption->name }}</flux:select.option>
-                    @endforeach
+            <div class="w-44">
+                <flux:select wire:model.live="sort" :label="__('Ordenar por')">
+                    <flux:select.option value="created_at">{{ __('Fecha de alta') }}</flux:select.option>
+                    <flux:select.option value="title">{{ __('Título') }}</flux:select.option>
+                    <flux:select.option value="author">{{ __('Autor') }}</flux:select.option>
                 </flux:select>
-            @endif
+            </div>
 
-            <flux:input wire:model.live.debounce.400ms="genre" :label="__('Género')" />
-
-            <flux:select wire:model.live="status" :label="__('Estado de lectura')">
-                <flux:select.option value="">{{ __('Todos') }}</flux:select.option>
-                @foreach ($statuses as $statusOption)
-                    <flux:select.option value="{{ $statusOption->value }}">{{ $statusOption->label() }}</flux:select.option>
-                @endforeach
-                <flux:select.option value="{{ $unspecified }}">{{ __('Sin especificar') }}</flux:select.option>
-            </flux:select>
-
-            <flux:select wire:model.live="condition" :label="__('Condición')">
-                <flux:select.option value="">{{ __('Todas') }}</flux:select.option>
-                @foreach ($conditions as $conditionOption)
-                    <flux:select.option value="{{ $conditionOption->value }}">{{ $conditionOption->label() }}</flux:select.option>
-                @endforeach
-                <flux:select.option value="{{ $unspecified }}">{{ __('Sin especificar') }}</flux:select.option>
-            </flux:select>
-        </div>
-
-        @if ($structureOwner)
-            <fieldset class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <legend class="mb-2 text-sm font-semibold">{{ __('Ubicación') }}</legend>
-
-                {{-- The bookcase filter has priority, so it comes first (spec 002, RF-06). --}}
-                <flux:select wire:model.live="bookcaseId" :label="__('Estantería')">
-                    <flux:select.option value="">{{ __('Todas') }}</flux:select.option>
-                    @foreach ($bookcaseOptions as $bookcaseOption)
-                        <flux:select.option value="{{ $bookcaseOption->id }}">{{ $bookcaseOption->name }} ({{ $bookcaseOption->room->name }})</flux:select.option>
-                    @endforeach
-                    <flux:select.option value="{{ $unspecified }}">{{ __('Sin especificar (en la mesa)') }}</flux:select.option>
+            <div class="w-52">
+                <flux:select wire:model.live="direction" :label="__('Orden')">
+                    <flux:select.option value="desc">{{ $sort === 'created_at' ? __('Más recientes primero') : __('Z → A') }}</flux:select.option>
+                    <flux:select.option value="asc">{{ $sort === 'created_at' ? __('Más antiguos primero') : __('A → Z') }}</flux:select.option>
                 </flux:select>
-
-                <flux:select wire:model.live="roomId" :label="__('Sala')">
-                    <flux:select.option value="">{{ __('Todas') }}</flux:select.option>
-                    @foreach ($roomOptions as $roomOption)
-                        <flux:select.option value="{{ $roomOption->id }}">{{ $roomOption->name }}</flux:select.option>
-                    @endforeach
-                    <flux:select.option value="{{ $unspecified }}">{{ __('Sin especificar (en la mesa)') }}</flux:select.option>
-                </flux:select>
-
-                <flux:select wire:model.live="shelfId" :label="__('Balda')" :disabled="! is_numeric($bookcaseId)">
-                    <flux:select.option value="">{{ __('Todas') }}</flux:select.option>
-                    @foreach ($shelfOptions as $shelfOption)
-                        <flux:select.option value="{{ $shelfOption->id }}">{{ $locations->numberedName(__('Balda :number', ['number' => $shelfOption->number]), $shelfOption->name) }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-
-                <flux:select wire:model.live="compartmentId" :label="__('Hueco')" :disabled="! is_numeric($shelfId)">
-                    <flux:select.option value="">{{ __('Todos') }}</flux:select.option>
-                    @foreach ($compartmentOptions as $compartmentOption)
-                        <flux:select.option value="{{ $compartmentOption->id }}">{{ $locations->numberedName(__('Hueco :number', ['number' => $compartmentOption->number]), $compartmentOption->name) }}</flux:select.option>
-                    @endforeach
-                </flux:select>
-            </fieldset>
-        @endif
-
-        <div class="flex flex-wrap items-end gap-4">
-            <flux:select wire:model.live="sort" :label="__('Ordenar por')" class="max-w-xs">
-                <flux:select.option value="created_at">{{ __('Fecha de alta') }}</flux:select.option>
-                <flux:select.option value="title">{{ __('Título') }}</flux:select.option>
-                <flux:select.option value="author">{{ __('Autor') }}</flux:select.option>
-            </flux:select>
-
-            <flux:select wire:model.live="direction" :label="__('Orden')" class="max-w-xs">
-                <flux:select.option value="desc">{{ $sort === 'created_at' ? __('Más recientes primero') : __('Z → A') }}</flux:select.option>
-                <flux:select.option value="asc">{{ $sort === 'created_at' ? __('Más antiguos primero') : __('A → Z') }}</flux:select.option>
-            </flux:select>
-
-            <flux:checkbox wire:model.live="overdueOnly" :label="__('Solo préstamos vencidos')" class="self-center" />
+            </div>
 
             <flux:button type="button" variant="ghost" wire:click="clearFilters">{{ __('Quitar filtros') }}</flux:button>
+
+            <flux:button
+                type="button"
+                icon="adjustments-horizontal"
+                aria-controls="more-filters"
+                x-on:click="moreFilters = ! moreFilters"
+                x-bind:aria-expanded="moreFilters.toString()"
+            >
+                {{ $activeMoreFilters ? __('Más filtros (:count)', ['count' => $activeMoreFilters]) : __('Más filtros') }}
+            </flux:button>
+        </div>
+
+        <div id="more-filters" x-show="moreFilters" x-cloak class="space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-700">
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                @if ($allLibraries)
+                    <flux:select wire:model.live="ownerFilter" :label="__('Propietario')">
+                        <flux:select.option value="">{{ __('Todos') }}</flux:select.option>
+                        @foreach ($ownerOptions as $ownerOption)
+                            <flux:select.option value="{{ $ownerOption->id }}">{{ $ownerOption->name }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                @endif
+
+                <flux:input wire:model.live.debounce.400ms="genre" :label="__('Género')" />
+
+                <flux:select wire:model.live="status" :label="__('Estado de lectura')">
+                    <flux:select.option value="">{{ __('Todos') }}</flux:select.option>
+                    @foreach ($statuses as $statusOption)
+                        <flux:select.option value="{{ $statusOption->value }}">{{ $statusOption->label() }}</flux:select.option>
+                    @endforeach
+                    <flux:select.option value="{{ $unspecified }}">{{ __('Sin especificar') }}</flux:select.option>
+                </flux:select>
+
+                <flux:select wire:model.live="condition" :label="__('Condición')">
+                    <flux:select.option value="">{{ __('Todas') }}</flux:select.option>
+                    @foreach ($conditions as $conditionOption)
+                        <flux:select.option value="{{ $conditionOption->value }}">{{ $conditionOption->label() }}</flux:select.option>
+                    @endforeach
+                    <flux:select.option value="{{ $unspecified }}">{{ __('Sin especificar') }}</flux:select.option>
+                </flux:select>
+
+                <flux:checkbox wire:model.live="overdueOnly" :label="__('Solo préstamos vencidos')" class="self-end pb-2" />
+            </div>
+
+            @if ($structureOwner)
+                <fieldset class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <legend class="mb-2 text-sm font-semibold">{{ __('Ubicación') }}</legend>
+
+                    {{-- The bookcase filter has priority, so it comes first (spec 002, RF-06). --}}
+                    <flux:select wire:model.live="bookcaseId" :label="__('Estantería')">
+                        <flux:select.option value="">{{ __('Todas') }}</flux:select.option>
+                        @foreach ($bookcaseOptions as $bookcaseOption)
+                            <flux:select.option value="{{ $bookcaseOption->id }}">{{ $bookcaseOption->name }} ({{ $bookcaseOption->room->name }})</flux:select.option>
+                        @endforeach
+                        <flux:select.option value="{{ $unspecified }}">{{ __('Sin especificar (en la mesa)') }}</flux:select.option>
+                    </flux:select>
+
+                    <flux:select wire:model.live="roomId" :label="__('Sala')">
+                        <flux:select.option value="">{{ __('Todas') }}</flux:select.option>
+                        @foreach ($roomOptions as $roomOption)
+                            <flux:select.option value="{{ $roomOption->id }}">{{ $roomOption->name }}</flux:select.option>
+                        @endforeach
+                        <flux:select.option value="{{ $unspecified }}">{{ __('Sin especificar (en la mesa)') }}</flux:select.option>
+                    </flux:select>
+
+                    <flux:select wire:model.live="shelfId" :label="__('Balda')" :disabled="! is_numeric($bookcaseId)">
+                        <flux:select.option value="">{{ __('Todas') }}</flux:select.option>
+                        @foreach ($shelfOptions as $shelfOption)
+                            <flux:select.option value="{{ $shelfOption->id }}">{{ $locations->numberedName(__('Balda :number', ['number' => $shelfOption->number]), $shelfOption->name) }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+
+                    <flux:select wire:model.live="compartmentId" :label="__('Hueco')" :disabled="! is_numeric($shelfId)">
+                        <flux:select.option value="">{{ __('Todos') }}</flux:select.option>
+                        @foreach ($compartmentOptions as $compartmentOption)
+                            <flux:select.option value="{{ $compartmentOption->id }}">{{ $locations->numberedName(__('Hueco :number', ['number' => $compartmentOption->number]), $compartmentOption->name) }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                </fieldset>
+            @endif
         </div>
     </form>
 
@@ -316,7 +343,7 @@ new class extends Component {
 
         @if ($view === App\Enums\BookView::Shelf && $owner)
             <div class="hidden xl:block" data-shelf-view>
-                <livewire:books.shelf-view :owner="$owner" :key="'shelf-view-'.$owner->id" />
+                <livewire:books.shelf-view :owner="$owner" :bookcase="is_numeric($bookcaseId) ? (int) $bookcaseId : null" :key="'shelf-view-'.$owner->id" />
             </div>
         @endif
     </div>

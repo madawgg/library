@@ -294,7 +294,8 @@ new class extends Component {
     }
 }; ?>
 
-<section class="w-full max-w-3xl space-y-6">
+{{-- Spec 005 (M-01): the edit form uses the full width and spreads its fields over several columns. --}}
+<section @class(["w-full space-y-6", "max-w-3xl" => ! $isEditing]) @if ($isEditing) data-wide-form @endif>
     <flux:heading size="xl" level="1">{{ $isEditing ? __('Editar libro') : __('Nuevo libro') }}</flux:heading>
 
     <form wire:submit="save" class="space-y-8">
@@ -306,9 +307,9 @@ new class extends Component {
             </flux:select>
         @endif
 
-        <fieldset class="grid gap-4 sm:grid-cols-2">
+        <fieldset @class(["grid gap-4 sm:grid-cols-2", "lg:grid-cols-4" => $isEditing])>
             <legend class="sr-only">{{ __('Datos básicos') }}</legend>
-            <div class="sm:col-span-2">
+            <div @class(["sm:col-span-2", "lg:col-span-2" => $isEditing])>
                 <flux:input wire:model="title" :label="__('Título')" required />
             </div>
             <flux:input wire:model="author" :label="__('Autor')" />
@@ -365,7 +366,7 @@ new class extends Component {
         </fieldset>
 
         @if ($isEditing)
-            <fieldset class="grid gap-4 sm:grid-cols-2">
+            <fieldset class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <legend class="mb-2 font-serif text-2xl font-semibold">{{ __('Más datos') }}</legend>
                 <flux:input type="number" wire:model="publicationYear" :label="__('Año de publicación')" />
                 <flux:input type="number" wire:model="pages" :label="__('Número de páginas')" min="1" />
@@ -380,7 +381,7 @@ new class extends Component {
                 </flux:select>
 
                 @if ($readingStatus === App\Enums\ReadingStatus::Lent->value)
-                    <div class="grid gap-4 rounded-lg border border-zinc-200 bg-surface p-4 sm:col-span-2 sm:grid-cols-2 dark:border-zinc-700">
+                    <div class="grid gap-4 rounded-lg border border-zinc-200 bg-surface p-4 sm:col-span-2 sm:grid-cols-2 lg:col-span-4 dark:border-zinc-700">
                         <flux:input wire:model="loanBorrower" :label="__('Prestado a')" required />
                         <flux:input type="date" wire:model="loanDate" :label="__('Fecha de préstamo')" :max="now()->toDateString()" required />
                     </div>
@@ -400,14 +401,14 @@ new class extends Component {
                     @endforeach
                 </flux:select>
 
-                <div class="sm:col-span-2">
+                <div class="sm:col-span-2 lg:col-span-4">
                     <flux:textarea wire:model="notes" :label="__('Notas')" rows="4" />
                 </div>
             </fieldset>
 
-            <fieldset class="grid gap-4 sm:grid-cols-2">
+            <fieldset class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <legend class="mb-2 font-serif text-2xl font-semibold">{{ __('Ubicación') }}</legend>
-                <p class="text-sm text-ink-muted sm:col-span-2">
+                <p class="text-sm text-ink-muted sm:col-span-2 lg:col-span-4">
                     {{ __('Elige sala, estantería, balda y hueco, o deja la sala vacía para que el libro quede en la mesa (sin ubicación).') }}
                 </p>
 

@@ -50,7 +50,7 @@ new class extends Component {
     }
 }; ?>
 
-<article class="w-full max-w-3xl space-y-6">
+<article data-book-page class="w-full space-y-6">
     @if ($book->cover_path)
         <img src="{{ route('books.cover', $book) }}" alt="{{ __('Portada de :title', ['title' => $book->title]) }}" class="float-end ms-6 mb-4 h-64 w-auto rounded border border-zinc-200 shadow-md dark:border-zinc-700" />
     @endif
