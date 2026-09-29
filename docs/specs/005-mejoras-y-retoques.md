@@ -1,6 +1,6 @@
 # Spec 005: Mejoras y retoques
 
-- **Estado:** en implementación (2026-09-30). El usuario indicó que se implemente con las mejoras M-01 a M-07; las mejoras nuevas irán en otra spec.
+- **Estado:** cerrada (2026-09-30). Incluye las mejoras M-01 a M-08; las mejoras nuevas irán en otra spec.
 - **Fecha:** 2026-09-29
 - **Orden de implementación:** al final de todo, después del resto de specs.
 - **Depende de:** [003 Diseño de interfaz](003-diseno-interfaz.md) y las pantallas de las demás specs.
@@ -44,6 +44,11 @@ Reunir las mejoras y los retoques de interfaz y de uso que se vayan observando d
 
 - En "Salas y estanterías", al pulsar en el nombre de una estantería se va directamente a "Mis libros" en modo estantería, mostrando esa estantería.
 
+### M-08 Orden de los filtros de ubicación: sala antes que estantería
+
+- En los filtros de "Mis libros", dentro de la ubicación, primero va la sala y después la estantería, porque es el orden natural de filtrado (sala → estantería → balda → hueco).
+- Sustituye a lo dicho en la spec 002 (RF-06): el filtro de estantería deja de mostrarse primero.
+
 ## Criterios de aceptación
 
 - **CA-01 (M-01)** Dado el formulario de edición de un libro, cuando se abre en una pantalla ancha, entonces ocupa todo el ancho del contenedor y sus campos se reparten en varias columnas. El formulario de alta no cambia.
@@ -55,6 +60,7 @@ Reunir las mejoras y los retoques de interfaz y de uso que se vayan observando d
 - **CA-07 (M-06)** Dada una sala, cuando se pulsa su nombre en "Salas y estanterías", entonces se abre su vista con una tarjeta por estantería. Cada tarjeta muestra un pequeño dibujo de baldas y huecos, el nombre y el número de libros.
 - **CA-08 (M-06, M-07)** Dada una tarjeta de estantería o el nombre de una estantería, cuando se pulsa, entonces se va a "Mis libros" en modo estantería mostrando esa estantería. En pantallas de menos de 1280 px se ve la tabla filtrada por esa estantería.
 - **CA-09 (M-06, M-07)** Dado un admin que gestiona las salas de otro usuario, cuando pulsa una estantería, entonces va a la vista estantería de la biblioteca de ese usuario.
+- **CA-10 (M-08)** Dados los filtros de ubicación del listado, cuando se abre "Más filtros", entonces aparecen en este orden: Sala, Estantería, Balda y Hueco.
 
 ## Decisiones tomadas
 

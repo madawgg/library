@@ -106,7 +106,7 @@ La ubicación es "todo o nada": o el libro está en un hueco concreto, del que s
 - Filtros:
   - Género (texto).
   - Estado de lectura y condición, cada uno con la opción adicional "Sin especificar".
-  - Ubicación física: un selector por cada nivel (sala, estantería, balda y hueco), con los valores de la estructura del propietario y combinables entre sí. El de estantería tiene prioridad y es el primero que se muestra. La opción "Sin especificar" muestra los libros sin ubicación.
+  - Ubicación física: un selector por cada nivel (sala, estantería, balda y hueco), con los valores de la estructura del propietario y combinables entre sí. ~~El de estantería tiene prioridad y es el primero que se muestra.~~ **Modificado por la spec 005 (M-08):** se muestran en el orden sala, estantería, balda y hueco. La opción "Sin especificar" muestra los libros sin ubicación.
 - Ordenación por título, autor y fecha de alta. Por defecto, por fecha de alta descendente (los más recientes primero).
 - Paginación de 15 libros por página.
 
@@ -210,7 +210,7 @@ La ubicación es "todo o nada": o el libro está en un hueco concreto, del que s
 - Los filtros de texto usan coincidencia parcial y la búsqueda da prioridad a título y autor.
 - La fecha de devolución se registra automáticamente al dejar el estado Prestado.
 - Los préstamos del historial solo los pueden editar o borrar los administradores y el super administrador.
-- Ubicación estructurada (sala → estantería → balda → hueco, más la posición), "todo o nada" (spec 004). Hay un filtro por nivel, combinables, y el de estantería tiene prioridad.
+- Ubicación estructurada (sala → estantería → balda → hueco, más la posición), "todo o nada" (spec 004). Hay un filtro por nivel, combinables. (El orden pasó a sala → estantería → balda → hueco por la spec 005, M-08.)
 - El listado se ordena por defecto por fecha de alta descendente.
 - Los datos del préstamo son obligatorios cuando el estado es Prestado y se conservan en un historial. El acceso al historial se definirá en la spec de interfaz de usuario.
 - La portada se puede quitar sin sustituirla.

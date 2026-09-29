@@ -192,3 +192,7 @@
       - Tarjeta de sala → tabla filtrada a 1100 px y estantería seleccionada a 1440 px.
       - Lomos de 24 px. Mayús + clic abre la ficha y el clic normal abre el menú.
       - Formulario de edición a 4 columnas.
+- Commit `a2b5087` (spec 005).
+- Spec 005: añadida y hecha **M-08**. Los filtros de ubicación van en el orden sala → estantería → balda → hueco. Esto sustituye lo dicho en la spec 002 (RF-06), que queda anotada. Se reemplaza el test del orden antiguo.
+- **Spec 005 cerrada** (M-01 a M-08). Las mejoras nuevas irán en otra spec.
+  - Verificación: `php artisan test`: 220 tests en verde. `pint --test` sin incidencias. En el navegador, los filtros de ubicación aparecen como Sala, Estantería, Balda y Hueco.

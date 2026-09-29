@@ -139,13 +139,16 @@ class BookListingTest extends TestCase
         $this->assertSame(['En la mesa'], $this->titles(Volt::test('books.index')->set('bookcaseId', 'none')));
     }
 
-    public function test_bookcase_filter_is_shown_before_the_other_location_filters(): void
+    /**
+     * Spec 005 (M-08) replaces the original order of spec 002: room first, then bookcase, shelf and compartment.
+     */
+    public function test_location_filters_follow_the_room_bookcase_shelf_compartment_order(): void
     {
         Room::factory()->for($this->owner)->create();
 
         $this->actingAs($this->owner)
             ->get('/books')
-            ->assertSeeInOrder(['Estantería', 'Sala', 'Balda', 'Hueco']);
+            ->assertSeeInOrder(['id="more-filters"', 'Ubicación', 'Sala', 'Estantería', 'Balda', 'Hueco'], false);
     }
 
     // Sorting (CA-24)

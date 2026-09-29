@@ -288,19 +288,19 @@ new class extends Component {
                 <fieldset class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <legend class="mb-2 text-sm font-semibold">{{ __('Ubicación') }}</legend>
 
-                    {{-- The bookcase filter has priority, so it comes first (spec 002, RF-06). --}}
-                    <flux:select wire:model.live="bookcaseId" :label="__('Estantería')">
-                        <flux:select.option value="">{{ __('Todas') }}</flux:select.option>
-                        @foreach ($bookcaseOptions as $bookcaseOption)
-                            <flux:select.option value="{{ $bookcaseOption->id }}">{{ $bookcaseOption->name }} ({{ $bookcaseOption->room->name }})</flux:select.option>
-                        @endforeach
-                        <flux:select.option value="{{ $unspecified }}">{{ __('Sin especificar (en la mesa)') }}</flux:select.option>
-                    </flux:select>
-
+                    {{-- Natural filtering order: room → bookcase → shelf → compartment (spec 005, M-08). --}}
                     <flux:select wire:model.live="roomId" :label="__('Sala')">
                         <flux:select.option value="">{{ __('Todas') }}</flux:select.option>
                         @foreach ($roomOptions as $roomOption)
                             <flux:select.option value="{{ $roomOption->id }}">{{ $roomOption->name }}</flux:select.option>
+                        @endforeach
+                        <flux:select.option value="{{ $unspecified }}">{{ __('Sin especificar (en la mesa)') }}</flux:select.option>
+                    </flux:select>
+
+                    <flux:select wire:model.live="bookcaseId" :label="__('Estantería')">
+                        <flux:select.option value="">{{ __('Todas') }}</flux:select.option>
+                        @foreach ($bookcaseOptions as $bookcaseOption)
+                            <flux:select.option value="{{ $bookcaseOption->id }}">{{ $bookcaseOption->name }} ({{ $bookcaseOption->room->name }})</flux:select.option>
                         @endforeach
                         <flux:select.option value="{{ $unspecified }}">{{ __('Sin especificar (en la mesa)') }}</flux:select.option>
                     </flux:select>
