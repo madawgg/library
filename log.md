@@ -196,3 +196,12 @@
 - Spec 005: añadida y hecha **M-08**. Los filtros de ubicación van en el orden sala → estantería → balda → hueco. Esto sustituye lo dicho en la spec 002 (RF-06), que queda anotada. Se reemplaza el test del orden antiguo.
 - **Spec 005 cerrada** (M-01 a M-08). Las mejoras nuevas irán en otra spec.
   - Verificación: `php artisan test`: 220 tests en verde. `pint --test` sin incidencias. En el navegador, los filtros de ubicación aparecen como Sala, Estantería, Balda y Hueco.
+- Commit `d6c90e8` (cierre de la spec 005).
+- **CI con GitHub Actions** (`.github/workflows/ci.yml`) para el repositorio `https://github.com/madawgg/library.git`:
+  - Dos jobs, en cada push y pull request a `main`, con PHP 8.2 y Node 22:
+    - "Estilo de código": `pint --test`.
+    - "Tests": extensiones gd, exif, fileinfo, mbstring y pdo_sqlite; `npm ci`, `npm run build`, `.env` a partir de `.env.example`, `key:generate` y `php artisan test`.
+  - Se eliminan los workflows del kit (`lint.yml` y `tests.yml`). Pedían credenciales de Flux Pro, usaban PHP 8.4 y un *environment* inexistente, y ejecutaban Pint sin `--test`.
+  - `phpunit.xml` fija `APP_NAME` y `APP_LOCALE=es`. Sin eso, el CI (que parte de `.env.example`, con `Laravel` y `en`) fallaría en los tests de títulos y traducciones.
+  - README: insignia de CI y sección "Integración continua".
+  - Verificación: se reprodujeron los pasos del workflow en una copia limpia del proyecto (sin `vendor`, `node_modules`, `.env` ni assets). Resultado: Pint sin incidencias, compilación correcta y 220 tests en verde.

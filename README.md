@@ -1,5 +1,7 @@
 # Biblioteca Personal
 
+[![CI](https://github.com/madawgg/library/actions/workflows/ci.yml/badge.svg)](https://github.com/madawgg/library/actions/workflows/ci.yml)
+
 CMS para gestionar bibliotecas físicas personales. Laravel 12 + starter kit de Livewire (Flux + Volt), Tailwind CSS y MySQL.
 
 El desarrollo sigue specs: los principios están en [`docs/constitution.md`](docs/constitution.md) y las funcionalidades en [`docs/specs/`](docs/specs/).
@@ -34,6 +36,13 @@ El seeder crea el único super administrador. Si ya existe uno, no crea otro. En
 - Ejecutar la aplicación: `php artisan serve`
 - Tests: `php artisan test`
 - Formato: `./vendor/bin/pint`
+
+## Integración continua
+
+GitHub Actions (`.github/workflows/ci.yml`) se ejecuta en cada push y pull request a `main` con PHP 8.2 y Node 22:
+
+- **Estilo de código:** `vendor/bin/pint --test`.
+- **Tests:** compila los assets (`npm run build`) y ejecuta `php artisan test` con SQLite en memoria. `phpunit.xml` fija la base de datos, el nombre de la aplicación y el idioma, así que los tests no dependen del `.env`.
 
 ## Tareas programadas
 
