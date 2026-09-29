@@ -113,6 +113,23 @@
     }
 }
 
+/* Cormorant Garamond has a small x-height: Flux heading sizes are scaled up to stay readable. */
+[data-flux-heading].text-sm {
+    font-size: 1.125rem;
+}
+
+[data-flux-heading].text-base {
+    font-size: 1.5rem;
+}
+
+[data-flux-heading].text-2xl {
+    font-size: 2.25rem;
+}
+
+[data-flux-heading].text-4xl {
+    font-size: 2.75rem;
+}
+
 [data-flux-field] {
     @apply grid gap-2;
 }

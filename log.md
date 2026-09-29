@@ -67,3 +67,23 @@
   - Verificación:
     - `php artisan test`: 72 tests en verde (226 assertions). `pint --test` sin incidencias.
     - En el navegador: tema claro y oscuro, menú móvil con teclado, fuentes cargadas solo desde localhost y ninguna petición externa.
+- Commit `6908680` (base visual de la 003).
+- **Implementadas las salas y estanterías de la spec 004** (RF-01 a RF-03 y la parte estructural de RF-04) con TDD. Son 20 tests en `tests/Feature/Shelving/`:
+  - Tablas `rooms`, `bookcases`, `shelves` y `compartments` (migración `create_shelving_tables`), con borrado en cascada. Modelos `Room`, `Bookcase`, `Shelf` y `Compartment`, con solo relaciones.
+  - Services:
+    - `RoomService`: listar, crear, renombrar y borrar salas.
+    - `BookcaseService`: crear y editar estanterías con baldas y huecos de distinto número. Al reducir la estructura se conservan los huecos existentes por número y se borran los sobrantes. Una estantería solo puede moverse a una sala del mismo propietario.
+  - `UserRoleService::canAccessLibraryOf()` (propietario o admin) y policies `RoomPolicy`, `BookcasePolicy` y `UserPolicy::manageLibrary`, que delegan en ella.
+  - Pantallas (Volt):
+    - `/rooms`: salas con sus estanterías y el resumen "N baldas · M huecos". Permite crear, renombrar y borrar salas, y borrar estanterías, con confirmación.
+    - Formulario de estantería (crear y editar) con nombres opcionales para baldas y huecos.
+    - Los admins acceden a `/admin/users/{user}/rooms` desde el panel de usuarios.
+  - Enlace "Salas y estanterías" en la navegación.
+  - **Se aplazan a la spec 002** los criterios que necesitan libros: CA-03, CA-07, CA-08, CA-09 y la parte de CA-09b sobre libros que pasan a la mesa. Se implementarán y probarán junto con los libros.
+  - **Bug corregido de la spec 001:** `Volt::route` no hace el *binding* implícito de modelos, así que los middleware `can:` recibían el id como texto y denegaban siempre. `/admin/users/{user}/edit` daba 403 incluso a los admins. Se registra `Route::model()` para `user`, `room` y `bookcase` en `AppServiceProvider` y se añade un test de la ruta.
+  - Ajustes de interfaz:
+    - Los tamaños de título de Flux se agrandan para Cormorant Garamond, que tiene poca altura de minúsculas.
+    - El número de huecos se envía al salir del campo (`wire:model.blur`) para no perder el valor si se pulsa un botón enseguida.
+  - Verificación:
+    - `php artisan test`: 93 tests en verde. `pint --test` sin incidencias.
+    - En el navegador, con el Test User: creada la sala "Salón" y la estantería "Estantería grande" con 3 baldas de 2, 4 y 3 huecos.

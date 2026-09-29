@@ -2,6 +2,7 @@
 @php
     $links = [
         ['label' => __('Inicio'), 'icon' => 'home', 'route' => 'dashboard', 'active' => 'dashboard', 'visible' => true],
+        ['label' => __('Salas y estanterías'), 'icon' => 'building-library', 'route' => 'rooms.index', 'active' => ['rooms.*', 'bookcases.*'], 'visible' => true],
         ['label' => __('Usuarios'), 'icon' => 'users', 'route' => 'admin.users.index', 'active' => 'admin.users.*', 'visible' => auth()->user()->can('viewAny', App\Models\User::class)],
     ];
 @endphp

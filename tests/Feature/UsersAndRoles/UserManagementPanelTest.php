@@ -149,6 +149,15 @@ class UserManagementPanelTest extends TestCase
         $this->assertNull($user->fresh());
     }
 
+    public function test_edit_page_opens_for_accounts_the_actor_can_manage(): void
+    {
+        $user = User::factory()->create(['name' => 'Ana Lectora']);
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)->get("/admin/users/{$user->id}/edit")->assertOk()->assertSee('Ana Lectora');
+        $this->actingAs(User::factory()->superAdmin()->create())->get("/admin/users/{$admin->id}/edit")->assertOk();
+    }
+
     public function test_admin_cannot_edit_or_delete_another_admin_or_the_super_admin(): void
     {
         $this->actingAs(User::factory()->admin()->create());

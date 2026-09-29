@@ -27,6 +27,14 @@ class UserRoleService
     }
 
     /**
+     * A user can access their own library; administrators can access anyone's (spec 001, RF-09).
+     */
+    public function canAccessLibraryOf(User $actor, User $owner): bool
+    {
+        return $actor->is($owner) || $this->hasAdminPrivileges($actor);
+    }
+
+    /**
      * Whether the actor can manage (edit or delete) the target account from the admin panel.
      */
     public function canManage(User $actor, User $target): bool

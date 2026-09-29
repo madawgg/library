@@ -38,6 +38,14 @@ class UserPolicy
         return $this->roles->canAssignRole($actor, $role);
     }
 
+    /**
+     * Manage the library (rooms, bookcases, books) of the given owner.
+     */
+    public function manageLibrary(User $actor, User $owner): bool
+    {
+        return $this->roles->canAccessLibraryOf($actor, $owner);
+    }
+
     public function deleteOwnAccount(User $actor, User $target): bool
     {
         return $actor->is($target) && $this->roles->canDeleteOwnAccount($actor);

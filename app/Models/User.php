@@ -7,6 +7,7 @@ use App\Enums\Role;
 use App\Enums\Theme;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -60,4 +61,12 @@ class User extends Authenticatable // implements MustVerifyEmail
         'role' => 'user',
         'theme' => 'light',
     ];
+
+    /**
+     * @return HasMany<Room, $this>
+     */
+    public function rooms(): HasMany
+    {
+        return $this->hasMany(Room::class);
+    }
 }

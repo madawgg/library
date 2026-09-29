@@ -56,6 +56,12 @@ new #[Title('Usuarios')] class extends Component {
                         <td class="py-3 pe-4">{{ $user->role->label() }}</td>
                         <td class="py-3">
                             <div class="flex justify-end gap-2">
+                                @can('manageLibrary', $user)
+                                    <flux:button size="sm" variant="ghost" :href="route('admin.users.rooms', $user)" wire:navigate>
+                                        {{ __('Salas y estanterías') }}<span class="sr-only"> {{ __('de :name', ['name' => $user->name]) }}</span>
+                                    </flux:button>
+                                @endcan
+
                                 @can('update', $user)
                                     <flux:button size="sm" :href="route('admin.users.edit', $user)" wire:navigate>
                                         {{ __('Editar') }}<span class="sr-only"> {{ $user->name }}</span>
