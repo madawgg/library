@@ -19,7 +19,10 @@
                         <a href="{{ route('books.show', $book) }}" class="font-semibold text-leather underline-offset-2 hover:underline" wire:navigate>{{ $book->title }}</a>
                     </td>
                     <td class="py-3 pe-4">{{ $book->author }}</td>
-                    <td class="py-3 pe-4">{{ $book->reading_status?->label() ?? __('Sin especificar') }}</td>
+                    <td class="py-3 pe-4">
+                        {{ $book->reading_status?->label() ?? __('Sin especificar') }}
+                        @include('livewire.books.partials.overdue-badge', ['class' => 'ms-2'])
+                    </td>
                     @if ($allLibraries)
                         <td class="py-3">{{ $book->user->name }}</td>
                     @endif

@@ -7,7 +7,7 @@ use Livewire\Volt\Volt;
 // No public landing page (spec 003): home goes to the dashboard, or to login for guests.
 Route::get('/', fn () => redirect()->route(auth()->check() ? 'dashboard' : 'login'))->name('home');
 
-Route::view('dashboard', 'dashboard')
+Volt::route('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 

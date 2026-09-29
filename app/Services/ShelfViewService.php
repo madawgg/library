@@ -39,7 +39,7 @@ class ShelfViewService
             'room',
             'shelves' => fn ($query) => $query->orderBy('number'),
             'shelves.compartments' => fn ($query) => $query->orderBy('number'),
-            'shelves.compartments.books' => fn ($query) => $query->orderBy('position'),
+            'shelves.compartments.books' => fn ($query) => $query->orderBy('position')->with('overdueLoan'),
         ]);
     }
 
@@ -51,6 +51,7 @@ class ShelfViewService
     public function tableBooks(User $owner, int $page): LengthAwarePaginator
     {
         return $owner->books()
+            ->with('overdueLoan')
             ->whereNull('compartment_id')
             ->orderBy('title')
             ->orderBy('id')

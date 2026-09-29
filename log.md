@@ -147,3 +147,26 @@
     - `php artisan test`: 196 tests en verde. `pint --test` sin incidencias.
     - En el navegador, a 1440 px: estantería dibujada; arrastrar a un hueco y delante de otro libro; menú con teclado, selección y cancelación con Escape; diálogo "Mover a…" con foco y Escape.
     - Se crearon 4 libros de prueba para el Test User (Rayuela, Pedro Páramo, Ficciones y La Regenta), y Rayuela y Ficciones quedaron en la balda 1, hueco 1.
+
+## 2026-09-30
+
+- Commit `8253f0d` (vista estantería de la 004 y selector de vistas de la 003).
+- Spec 003: decidido que el inicio muestra los 3 últimos libros añadidos.
+- **Completada la spec 003** con TDD. Son 12 tests nuevos (`DashboardTest`, `OverdueAlertTest` y `MailStyleTest`):
+  - **Inicio (RF-05):**
+    - Es un componente Volt con `LibrarySummaryService`. Muestra los totales (libros, leídos, prestados y préstamos vencidos) de la biblioteca propia.
+    - Aviso de préstamos vencidos (`role="alert"`) con el libro, a quién se prestó y los días.
+    - Los 3 últimos libros añadidos.
+    - Accesos rápidos: añadir libro, ver mis libros y ver la estantería. Este último solo a partir de 1280 px, mediante `?vista=estanteria`, que guarda la preferencia.
+  - **Préstamo vencido (RF-07):**
+    - Relación `Book::overdueLoan`.
+    - Distintivo con texto "Préstamo vencido" en la cuadrícula, la tabla, el lomo (y su ficha emergente) y la ficha del libro.
+    - Filtro "Solo préstamos vencidos" en el listado (`?vencidos=1`).
+  - **Correos (RF-11):**
+    - Vistas de correo publicadas y tema propio `resources/views/vendor/mail/html/themes/biblioteca.css`, configurado en `config/mail.markdown`.
+    - Marca en texto en serif, fondo papel, texto tinta, botón y enlaces en cuero, y el enlace también en texto plano. No queda ninguna referencia a "Laravel".
+  - Legibilidad: Cormorant Garamond usa por defecto números de estilo antiguo (el "1" parece una "I" y el "0" una "o"). Se activan las cifras normales (`lining-nums`, incluidas en la fuente descargada) en títulos y textos en serif, y las cifras del resumen usan la sans.
+  - Verificación:
+    - `php artisan test`: 208 tests en verde. `pint --test` sin incidencias.
+    - En el navegador: inicio del Test User (en tema oscuro) con el préstamo vencido real.
+    - Revisado el HTML generado del correo de recuperación.

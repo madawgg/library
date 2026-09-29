@@ -97,6 +97,15 @@
         letter-spacing: 0.01em;
     }
 
+    /* Cormorant's default old-style figures make "1" look like "I" and "0" like "o": use lining figures. */
+    h1,
+    h2,
+    h3,
+    [data-flux-heading],
+    .font-serif {
+        font-variant-numeric: lining-nums;
+    }
+
     a {
         text-underline-offset: 0.2em;
     }

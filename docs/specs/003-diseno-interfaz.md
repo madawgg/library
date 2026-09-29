@@ -137,6 +137,7 @@ Los préstamos marcados con tiempo superado (spec 002) se muestran de tres forma
 
 ## Decisiones tomadas
 
+- El inicio muestra los 3 últimos libros añadidos.
 - No hay portada pública: la ruta `/` lleva al inicio si hay sesión y al login si no.
 - Fuentes: Cormorant Garamond (títulos) y Source Sans 3 (interfaz).
 - Las preferencias del usuario (tema y, más adelante, la vista del listado) se guardan en columnas de la tabla `users`.

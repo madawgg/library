@@ -13,6 +13,7 @@
                         @endif
                     </div>
                 @endif
+                @include('livewire.books.partials.overdue-badge')
                 <span class="block font-semibold leading-tight text-leather group-hover:underline">{{ $book->title }}</span>
                 @if ($book->author)
                     <span class="block text-sm text-ink-muted">{{ $book->author }}</span>

@@ -20,6 +20,13 @@
             <span class="truncate text-xs font-semibold [writing-mode:vertical-rl] rotate-180">{{ $book->title }}</span>
         </button>
 
+        @if ($book->overdueLoan)
+            {{-- On the spine the badge sits across the top so it stays readable. --}}
+            <span data-overdue-badge class="absolute -top-2 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded bg-leather px-1 text-[0.65rem] font-semibold text-surface shadow">
+                {{ __('Vencido') }}<span class="sr-only"> ({{ __('Préstamo vencido') }})</span>
+            </span>
+        @endif
+
         <flux:menu>
             <flux:menu.item icon="arrows-right-left" wire:click="openMoveDialog({{ $book->id }})">{{ __('Mover a…') }}</flux:menu.item>
             <flux:menu.item icon="cursor-arrow-rays" wire:click="selectBook({{ $book->id }})">{{ __('Seleccionar y colocar') }}</flux:menu.item>
@@ -40,6 +47,9 @@
         @endif
         @if ($book->reading_status)
             <p class="text-ink-muted">{{ $book->reading_status->label() }}</p>
+        @endif
+        @if ($book->overdueLoan)
+            <p class="mt-1 font-semibold text-leather">{{ __('Préstamo vencido') }}</p>
         @endif
     </div>
 </div>

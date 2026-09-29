@@ -21,11 +21,11 @@ class BookCatalogService
 
     /**
      * @param  User|null  $owner  library to list, or null for every library (administrators)
-     * @param  array{search?: ?string, genre?: ?string, status?: ?string, condition?: ?string, room?: int|string|null, bookcase?: int|string|null, shelf?: int|string|null, compartment?: int|string|null, owner?: ?int}  $filters
+     * @param  array{search?: ?string, genre?: ?string, status?: ?string, condition?: ?string, room?: int|string|null, bookcase?: int|string|null, shelf?: int|string|null, compartment?: int|string|null, owner?: ?int, overdue?: bool}  $filters
      */
     public function search(?User $owner, array $filters, string $sort = 'created_at', string $direction = 'desc'): LengthAwarePaginator
     {
-        $query = Book::query()->with('user');
+        $query = Book::query()->with(['user', 'overdueLoan']);
 
         if ($owner) {
             $query->whereBelongsTo($owner);
@@ -42,6 +42,10 @@ class BookCatalogService
         $this->applyNullableFilter($query, 'reading_status', $filters['status'] ?? null);
         $this->applyNullableFilter($query, 'condition', $filters['condition'] ?? null);
         $this->applyLocation($query, $filters);
+
+        if (! empty($filters['overdue'])) {
+            $query->whereHas('overdueLoan');
+        }
 
         $sort = in_array($sort, self::SORTS, true) ? $sort : 'created_at';
         $direction = $direction === 'asc' ? 'asc' : 'desc';

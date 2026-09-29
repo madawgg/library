@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Book extends Model
 {
@@ -64,5 +65,15 @@ class Book extends Model
     public function loans(): HasMany
     {
         return $this->hasMany(Loan::class);
+    }
+
+    /**
+     * The loan in progress flagged by the daily check as lasting more than two months.
+     *
+     * @return HasOne<Loan, $this>
+     */
+    public function overdueLoan(): HasOne
+    {
+        return $this->hasOne(Loan::class)->whereNull('returned_on')->where('is_overdue', true);
     }
 }

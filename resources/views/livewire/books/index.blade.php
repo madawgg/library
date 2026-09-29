@@ -50,15 +50,32 @@ new class extends Component {
     #[Url(as: 'owner', except: '')]
     public string $ownerFilter = '';
 
+    #[Url(as: 'vencidos', except: false)]
+    public bool $overdueOnly = false;
+
     #[Url(except: 'created_at')]
     public string $sort = 'created_at';
 
     #[Url(except: 'desc')]
     public string $direction = 'desc';
 
-    public function mount(?User $user = null, bool $allLibraries = false): void
+    /**
+     * @param  string|null  $vista  quick access from the home page: "cuadricula", "tabla" or "estanteria"
+     */
+    public function mount(?User $user = null, bool $allLibraries = false, ?string $vista = null): void
     {
         $this->allLibraries = $allLibraries;
+
+        $requestedView = match ($vista ?? request()->query('vista')) {
+            'cuadricula' => BookView::Grid,
+            'tabla' => BookView::Table,
+            'estanteria' => BookView::Shelf,
+            default => null,
+        };
+
+        if ($requestedView) {
+            app(UserPreferenceService::class)->updateBookView(Auth::user(), $requestedView);
+        }
 
         if ($allLibraries) {
             $this->authorize('viewAny', User::class);
@@ -101,7 +118,7 @@ new class extends Component {
 
     public function clearFilters(): void
     {
-        $this->reset('search', 'genre', 'status', 'condition', 'roomId', 'bookcaseId', 'shelfId', 'compartmentId', 'ownerFilter');
+        $this->reset('search', 'genre', 'status', 'condition', 'roomId', 'bookcaseId', 'shelfId', 'compartmentId', 'ownerFilter', 'overdueOnly');
         $this->resetPage();
     }
 
@@ -126,6 +143,7 @@ new class extends Component {
             'shelf' => $this->bookcaseId === BookCatalogService::UNSPECIFIED ? '' : $this->shelfId,
             'compartment' => $this->bookcaseId === BookCatalogService::UNSPECIFIED ? '' : $this->compartmentId,
             'owner' => $this->ownerFilter,
+            'overdue' => $this->overdueOnly,
         ];
 
         // Location filters use the structure of the listed library; in the global listing, of the chosen owner.
@@ -271,6 +289,8 @@ new class extends Component {
                 <flux:select.option value="desc">{{ $sort === 'created_at' ? __('Más recientes primero') : __('Z → A') }}</flux:select.option>
                 <flux:select.option value="asc">{{ $sort === 'created_at' ? __('Más antiguos primero') : __('A → Z') }}</flux:select.option>
             </flux:select>
+
+            <flux:checkbox wire:model.live="overdueOnly" :label="__('Solo préstamos vencidos')" class="self-center" />
 
             <flux:button type="button" variant="ghost" wire:click="clearFilters">{{ __('Quitar filtros') }}</flux:button>
         </div>

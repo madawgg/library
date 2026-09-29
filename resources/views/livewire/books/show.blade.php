@@ -16,7 +16,7 @@ new class extends Component {
     {
         $this->authorize('view', $book);
 
-        $this->book = $book;
+        $this->book = $book->load('overdueLoan');
     }
 
     public function delete(BookService $books): void
@@ -60,6 +60,7 @@ new class extends Component {
         @if ($book->author)
             <p class="text-lg text-ink-muted">{{ $book->author }}</p>
         @endif
+        @include('livewire.books.partials.overdue-badge')
         @unless ($isOwnBook)
             <p class="text-sm text-ink-muted">{{ __('Biblioteca de :name', ['name' => $owner->name]) }}</p>
         @endunless
