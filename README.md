@@ -44,6 +44,19 @@ GitHub Actions (`.github/workflows/ci.yml`) se ejecuta en cada push y pull reque
 - **Estilo de código:** `vendor/bin/pint --test`.
 - **Tests:** compila los assets (`npm run build`) y ejecuta `php artisan test` con SQLite en memoria. `phpunit.xml` fija la base de datos, el nombre de la aplicación y el idioma, así que los tests no dependen del `.env`.
 
+## Despliegue continuo
+
+`.github/workflows/deploy.yml` despliega en Hostinger cada push a `main` que pase la CI. También se puede lanzar a mano desde Actions.
+
+- GitHub compila las dependencias de producción y los assets, y sube la release por SSH con `rsync`.
+- El servidor conserva su `.env` y su `storage/`.
+- Después ejecuta `migrate --force` y `optimize`, y comprueba `/up`.
+
+Configuración en *Settings → Secrets and variables → Actions*:
+
+- **Variables:** `DEPLOY_HOST`, `DEPLOY_PORT`, `DEPLOY_USER`, `DEPLOY_PATH`, `DEPLOY_PHP` y `APP_URL`.
+- **Secrets:** `DEPLOY_SSH_KEY` y `DEPLOY_KNOWN_HOSTS`.
+
 ## Tareas programadas
 
 Todos los días a las 2:00, `loans:check-overdue` marca como vencidos los préstamos activos de más de 2 meses. Para que se ejecute, el servidor necesita el cron de Laravel:

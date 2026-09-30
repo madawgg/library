@@ -205,3 +205,15 @@
   - `phpunit.xml` fija `APP_NAME` y `APP_LOCALE=es`. Sin eso, el CI (que parte de `.env.example`, con `Laravel` y `en`) fallaría en los tests de títulos y traducciones.
   - README: insignia de CI y sección "Integración continua".
   - Verificación: se reprodujeron los pasos del workflow en una copia limpia del proyecto (sin `vendor`, `node_modules`, `.env` ni assets). Resultado: Pint sin incidencias, compilación correcta y 220 tests en verde.
+- Commit `9815ef8` y push a `origin/main`. La primera ejecución de la CI en GitHub terminó en verde.
+- **CD a Hostinger** (`.github/workflows/deploy.yml`). Decisiones: subdominio de miguelgutierrez.me, despliegue automático tras CI verde (y manual) y subida por `rsync` desde GitHub.
+  - Se lanza con `workflow_run` al terminar la CI con éxito en `main`, o con `workflow_dispatch`. Despliega exactamente el commit validado. El job se salta mientras no exista la variable `DEPLOY_HOST`.
+  - Pasos:
+    - `composer install --no-dev -o`, `npm ci` y `npm run build`.
+    - SSH con clave de despliegue y known_hosts desde Secrets; `artisan down`.
+    - `rsync --delete`, excluyendo `.env`, `storage/`, `bootstrap/cache/`, `.git`, `tests`, `docs` y `node_modules`.
+    - `package:discover`, `migrate --force`, `optimize` y `up`. Si algo falla, se vuelve a levantar el sitio.
+    - Comprobación de `APP_URL/up`.
+  - Configuración en GitHub: variables `DEPLOY_HOST`, `DEPLOY_PORT`, `DEPLOY_USER`, `DEPLOY_PATH`, `DEPLOY_PHP` y `APP_URL`; secrets `DEPLOY_SSH_KEY` y `DEPLOY_KNOWN_HOSTS`.
+  - Guía de puesta en marcha del servidor en `_reusable/DEPLOY_BIBLIOTECA.md` (fuera del repositorio). README con la sección "Despliegue continuo".
+  - Verificación local: `php artisan optimize` funciona con las rutas del proyecto (incluida la closure de `/`) y los YAML son válidos. El despliegue real está pendiente de configurar el servidor y los secrets.

@@ -1,0 +1,115 @@
+name: Deploy
+
+# Continuous deployment to Hostinger: runs after a green CI on main, or by hand.
+# GitHub builds the release (PHP dependencies without dev packages + Vite assets) and uploads it
+# over SSH with rsync. The server keeps its own .env and storage/ (covers, logs, sessions).
+#
+# Repository configuration (Settings → Secrets and variables → Actions):
+#   Variables: DEPLOY_HOST, DEPLOY_PORT, DEPLOY_USER, DEPLOY_PATH, DEPLOY_PHP (optional, default "php")
+#   Secrets:   DEPLOY_SSH_KEY (private key of the deploy key), DEPLOY_KNOWN_HOSTS (output of ssh-keyscan)
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Desplegar en Hostinger
+    # Skipped until the server is configured (DEPLOY_HOST variable), so pushes do not fail before the setup.
+    if: vars.DEPLOY_HOST != '' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.APP_URL }}
+
+    env:
+      PHP_BIN: ${{ vars.DEPLOY_PHP || 'php' }}
+      SSH_TARGET: ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}
+      SSH_PORT: ${{ vars.DEPLOY_PORT || '22' }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Deploy exactly the commit that passed the CI.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+          coverage: none
+
+      - name: Install PHP dependencies (production)
+        run: composer install --no-dev --no-interaction --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Build assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Configure SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Enable maintenance mode
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" "$SSH_TARGET" \
+            "cd '$DEPLOY_PATH' && if [ -f artisan ]; then $PHP_BIN artisan down --retry=15 || true; fi"
+
+      - name: Upload release
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/deploy_key -p $SSH_PORT" \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='node_modules/' \
+            --exclude='tests/' \
+            --exclude='docs/' \
+            --exclude='.env' \
+            --exclude='storage/' \
+            --exclude='bootstrap/cache/' \
+            --exclude='public/storage' \
+            ./ "$SSH_TARGET:$DEPLOY_PATH/"
+
+      - name: Migrate, cache and go live
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" "$SSH_TARGET" "set -e
+            cd '$DEPLOY_PATH'
+            mkdir -p bootstrap/cache storage/app/private storage/framework/cache storage/framework/sessions storage/framework/views storage/logs
+            $PHP_BIN artisan package:discover --ansi
+            $PHP_BIN artisan migrate --force
+            $PHP_BIN artisan optimize
+            $PHP_BIN artisan up"
+
+      - name: Leave the site up if something failed
+        if: failure()
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" "$SSH_TARGET" \
+            "cd '$DEPLOY_PATH' && if [ -f artisan ]; then $PHP_BIN artisan up || true; fi" || true
+
+      - name: Check the application answers
+        if: vars.APP_URL != ''
+        run: curl --fail --silent --show-error --max-time 30 "${{ vars.APP_URL }}/up" > /dev/null
