@@ -217,3 +217,5 @@
   - Configuración en GitHub: variables `DEPLOY_HOST`, `DEPLOY_PORT`, `DEPLOY_USER`, `DEPLOY_PATH`, `DEPLOY_PHP` y `APP_URL`; secrets `DEPLOY_SSH_KEY` y `DEPLOY_KNOWN_HOSTS`.
   - Guía de puesta en marcha del servidor en `_reusable/DEPLOY_BIBLIOTECA.md` (fuera del repositorio). README con la sección "Despliegue continuo".
   - Verificación local: `php artisan optimize` funciona con las rutas del proyecto (incluida la closure de `/`) y los YAML son válidos. El despliegue real está pendiente de configurar el servidor y los secrets.
+- Commit `6e3d23d` y push. Primer despliegue en Hostinger en verde: `/up` 200, `/.env` 403, login 200. El correo SMTP de producción funciona.
+- Creada `docs/specs/006-proteccion-antibots.md` (borrador): honeypot (campo trampa y tiempo mínimo) en registro y recuperación de contraseña, y límite de envíos por IP en esos dos formularios. Tiene preguntas abiertas sobre los límites, el tiempo mínimo y la respuesta al detectar un bot.
