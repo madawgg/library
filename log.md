@@ -219,3 +219,8 @@
   - Verificación local: `php artisan optimize` funciona con las rutas del proyecto (incluida la closure de `/`) y los YAML son válidos. El despliegue real está pendiente de configurar el servidor y los secrets.
 - Commit `6e3d23d` y push. Primer despliegue en Hostinger en verde: `/up` 200, `/.env` 403, login 200. El correo SMTP de producción funciona.
 - Creada `docs/specs/006-proteccion-antibots.md` (borrador): honeypot (campo trampa y tiempo mínimo) en registro y recuperación de contraseña, y límite de envíos por IP en esos dos formularios. Tiene preguntas abiertas sobre los límites, el tiempo mínimo y la respuesta al detectar un bot.
+- Spec 005: añadida y hecha **M-09**, después del cierre y a petición del usuario. En móvil, la ficha del libro muestra la portada arriba y la información debajo.
+  - Causa: la portada tenía `float-end` en todos los tamaños y el texto quedaba apretado a su lado.
+  - Arreglo: ahora es un bloque centrado y solo se coloca a un lado desde 640 px (`sm:float-end`).
+  - Test nuevo en `ImprovementsTest`.
+  - Verificación: `php artisan test`: 221 tests en verde. `pint --test` sin incidencias. En el navegador, a 375 px: sin float, título debajo de la portada y sin desbordamiento horizontal. A 1100 px: portada a la derecha, como antes.

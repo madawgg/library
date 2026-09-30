@@ -52,7 +52,13 @@ new class extends Component {
 
 <article data-book-page class="w-full space-y-6">
     @if ($book->cover_path)
-        <img src="{{ route('books.cover', $book) }}" alt="{{ __('Portada de :title', ['title' => $book->title]) }}" class="float-end ms-6 mb-4 h-64 w-auto rounded border border-zinc-200 shadow-md dark:border-zinc-700" />
+        {{-- Spec 005 (M-09): on mobile the cover sits on top and the details go below; it only floats from 640 px. --}}
+        <img
+            data-book-cover
+            src="{{ route('books.cover', $book) }}"
+            alt="{{ __('Portada de :title', ['title' => $book->title]) }}"
+            class="mx-auto mb-4 block h-64 w-auto max-w-full rounded border border-zinc-200 shadow-md sm:float-end sm:mx-0 sm:ms-6 dark:border-zinc-700"
+        />
     @endif
 
     <header class="space-y-1">

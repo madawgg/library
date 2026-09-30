@@ -8,6 +8,7 @@ use App\Models\Bookcase;
 use App\Models\Room;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Volt\Volt;
 use Tests\TestCase;
 
@@ -64,6 +65,32 @@ class ImprovementsTest extends TestCase
             ->get(route('books.show', $book))
             ->assertSee('data-book-page', false)
             ->assertDontSee('max-w-3xl', false);
+    }
+
+    // M-09 (CA-11)
+
+    public function test_book_page_stacks_the_cover_above_the_details_on_mobile(): void
+    {
+        Storage::fake('local');
+        Storage::disk('local')->put('covers/c.webp', 'x');
+        $book = Book::factory()->for($this->owner)->create();
+        $book->forceFill(['cover_path' => 'covers/c.webp'])->save();
+
+        $html = $this->actingAs($this->owner)->get(route('books.show', $book))->assertOk()->getContent();
+
+        preg_match('/<img[^>]*data-book-cover[^>]*>/', $html, $cover);
+        $this->assertNotEmpty($cover, 'The cover image is marked with data-book-cover.');
+
+        preg_match('/class="([^"]*)"/', $cover[0], $class);
+        $classes = explode(' ', $class[1]);
+
+        // No float on mobile: the cover is a block above the details. It only floats from 640 px.
+        $this->assertNotContains('float-end', $classes);
+        $this->assertContains('sm:float-end', $classes);
+        $this->assertContains('block', $classes);
+
+        // The cover comes before the title and the details in the page.
+        $this->assertLessThan(strpos($html, '<h1'), strpos($html, 'data-book-cover'));
     }
 
     // M-03 (CA-03) and M-04 (CA-04)

@@ -1,6 +1,6 @@
 # Spec 005: Mejoras y retoques
 
-- **Estado:** cerrada (2026-09-30). Incluye las mejoras M-01 a M-08; las mejoras nuevas irán en otra spec.
+- **Estado:** cerrada (2026-09-30). Incluye las mejoras M-01 a M-08, más M-09, añadida después del cierre a petición del usuario como corrección de la ficha en móvil.
 - **Fecha:** 2026-09-29
 - **Orden de implementación:** al final de todo, después del resto de specs.
 - **Depende de:** [003 Diseño de interfaz](003-diseno-interfaz.md) y las pantallas de las demás specs.
@@ -49,6 +49,12 @@ Reunir las mejoras y los retoques de interfaz y de uso que se vayan observando d
 - En los filtros de "Mis libros", dentro de la ubicación, primero va la sala y después la estantería, porque es el orden natural de filtrado (sala → estantería → balda → hueco).
 - Sustituye a lo dicho en la spec 002 (RF-06): el filtro de estantería deja de mostrarse primero.
 
+### M-09 Ficha del libro en móvil: portada arriba, información debajo
+
+- Añadida después del cierre, a petición del usuario, como corrección de la ficha (M-02).
+- En pantallas de móvil, la portada se muestra arriba y la información del libro debajo, a todo el ancho. No se colocan una al lado de la otra.
+- En pantallas más anchas se mantiene la distribución actual: la portada a un lado y la información junto a ella.
+
 ## Criterios de aceptación
 
 - **CA-01 (M-01)** Dado el formulario de edición de un libro, cuando se abre en una pantalla ancha, entonces ocupa todo el ancho del contenedor y sus campos se reparten en varias columnas. El formulario de alta no cambia.
@@ -61,6 +67,7 @@ Reunir las mejoras y los retoques de interfaz y de uso que se vayan observando d
 - **CA-08 (M-06, M-07)** Dada una tarjeta de estantería o el nombre de una estantería, cuando se pulsa, entonces se va a "Mis libros" en modo estantería mostrando esa estantería. En pantallas de menos de 1280 px se ve la tabla filtrada por esa estantería.
 - **CA-09 (M-06, M-07)** Dado un admin que gestiona las salas de otro usuario, cuando pulsa una estantería, entonces va a la vista estantería de la biblioteca de ese usuario.
 - **CA-10 (M-08)** Dados los filtros de ubicación del listado, cuando se abre "Más filtros", entonces aparecen en este orden: Sala, Estantería, Balda y Hueco.
+- **CA-11 (M-09)** Dada la ficha de un libro con portada en una pantalla de móvil, cuando se abre, entonces la portada aparece arriba y el título y los datos debajo, sin texto a los lados de la portada. En pantallas de 640 px o más, la portada queda a un lado.
 
 ## Decisiones tomadas
 
