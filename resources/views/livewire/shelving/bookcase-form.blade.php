@@ -22,7 +22,7 @@ new class extends Component {
 
     public ?int $roomId = null;
 
-    /** @var list<array{name: ?string, compartment_count: int, compartment_names: list<?string>}> */
+    /** @var list<array{id: ?int, name: ?string, compartment_count: int, compartment_names: list<?string>}> */
     public array $shelves = [];
 
     public function mount(?Room $room = null, ?Bookcase $bookcase = null, BookcaseService $bookcases, RoomService $rooms): void
@@ -35,6 +35,7 @@ new class extends Component {
             $this->name = $bookcase->name;
             $this->roomId = $bookcase->room_id;
             $this->shelves = array_map(fn (array $shelf) => [
+                'id' => $shelf['id'],
                 'name' => $shelf['name'] ?? '',
                 'compartment_count' => count($shelf['compartment_names']),
                 'compartment_names' => array_map(fn (?string $name) => $name ?? '', $shelf['compartment_names']),
@@ -61,6 +62,19 @@ new class extends Component {
         $this->shelves = array_values($this->shelves);
     }
 
+    /**
+     * Shelves keep their id when they move, so their books go with them on save (spec 004, RF-08).
+     */
+    public function moveShelfUp(int $index): void
+    {
+        $this->swapShelves($index, $index - 1);
+    }
+
+    public function moveShelfDown(int $index): void
+    {
+        $this->swapShelves($index, $index + 1);
+    }
+
     public function save(BookcaseService $bookcases): void
     {
         $this->bookcase
@@ -71,6 +85,7 @@ new class extends Component {
             'name' => ['required', 'string', 'max:255'],
             'roomId' => ['required', 'integer', Rule::exists('rooms', 'id')->where('user_id', $this->owner->id)],
             'shelves' => ['required', 'array', 'min:1'],
+            'shelves.*.id' => ['nullable', 'integer'],
             'shelves.*.name' => ['nullable', 'string', 'max:255'],
             'shelves.*.compartment_count' => ['required', 'integer', 'min:1'],
             'shelves.*.compartment_names' => ['array'],
@@ -78,6 +93,8 @@ new class extends Component {
         ]);
 
         $structure = array_map(fn (array $shelf) => [
+            // The shelf identity travels with it; without "id" the service matches shelves by number.
+            ...(array_key_exists('id', $shelf) ? ['id' => $shelf['id'] ? (int) $shelf['id'] : null] : []),
             'name' => $shelf['name'] ?? null,
             'compartment_names' => array_slice(
                 array_pad($shelf['compartment_names'] ?? [], (int) $shelf['compartment_count'], null),
@@ -110,7 +127,16 @@ new class extends Component {
 
     private function emptyShelf(): array
     {
-        return ['name' => '', 'compartment_count' => 1, 'compartment_names' => ['']];
+        return ['id' => null, 'name' => '', 'compartment_count' => 1, 'compartment_names' => ['']];
+    }
+
+    private function swapShelves(int $from, int $to): void
+    {
+        if (! isset($this->shelves[$from], $this->shelves[$to])) {
+            return;
+        }
+
+        [$this->shelves[$from], $this->shelves[$to]] = [$this->shelves[$to], $this->shelves[$from]];
     }
 }; ?>
 
@@ -145,6 +171,16 @@ new class extends Component {
 
                         <div class="w-36">
                             <flux:input type="number" min="1" wire:model.blur="shelves.{{ $index }}.compartment_count" :label="__('Huecos')" />
+                        </div>
+
+                        {{-- Move the shelf with its compartments and books (spec 004, RF-08). --}}
+                        <div class="flex gap-1">
+                            <flux:button type="button" size="sm" variant="ghost" icon="arrow-up" wire:click="moveShelfUp({{ $index }})" :disabled="$loop->first">
+                                <span class="sr-only">{{ __('Subir') }} {{ __('balda :number', ['number' => $index + 1]) }}</span>
+                            </flux:button>
+                            <flux:button type="button" size="sm" variant="ghost" icon="arrow-down" wire:click="moveShelfDown({{ $index }})" :disabled="$loop->last">
+                                <span class="sr-only">{{ __('Bajar') }} {{ __('balda :number', ['number' => $index + 1]) }}</span>
+                            </flux:button>
                         </div>
 
                         @if (count($shelves) > 1)

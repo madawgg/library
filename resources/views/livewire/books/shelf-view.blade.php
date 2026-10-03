@@ -2,7 +2,9 @@
 
 use App\Models\Book;
 use App\Models\Compartment;
+use App\Models\Shelf;
 use App\Models\User;
+use App\Services\BookcaseService;
 use App\Services\BookLocationService;
 use App\Services\ShelfViewService;
 use Livewire\Attributes\Locked;
@@ -88,6 +90,23 @@ new class extends Component {
         $this->announcement = $compartment
             ? __('«:title» colocado en :place, posición :position.', ['title' => $book->title, 'place' => $locations->compartmentLabel($compartment), 'position' => $book->position])
             : __('«:title» está ahora en la mesa.', ['title' => $book->title]);
+    }
+
+    /**
+     * Move a shelf, with its compartments and books, to another position (spec 004, RF-08).
+     * Used by dragging the shelf handle and by its "Subir balda" / "Bajar balda" buttons.
+     */
+    public function moveShelf(int $shelfId, int $position, BookcaseService $bookcases): void
+    {
+        $shelf = Shelf::with('bookcase')->findOrFail($shelfId);
+
+        $this->authorize('update', $shelf->bookcase);
+
+        $bookcases->moveShelf($shelf, $position);
+
+        $shelf->refresh();
+        $this->announcement = __('Balda movida a la posición :position, con todos sus libros.', ['position' => $shelf->number])
+            .($shelf->name ? ' ('.$shelf->name.')' : '');
     }
 
     public function openMoveDialog(int $bookId): void
@@ -201,8 +220,10 @@ new class extends Component {
     class="space-y-6"
     x-data="{
         draggedBookId: null,
+        // Books travel as text/plain and shelves as application/x-shelf, so each drop zone only reacts to its kind.
         dropInCompartment(event, compartmentId) {
             const bookId = Number(event.dataTransfer.getData('text/plain'));
+            if (! bookId) return;
             const spines = [...event.currentTarget.querySelectorAll('[data-spine]')].filter(spine => Number(spine.dataset.spine) !== bookId);
             const index = spines.findIndex(spine => {
                 const box = spine.getBoundingClientRect();
@@ -211,7 +232,12 @@ new class extends Component {
             $wire.moveBook(bookId, compartmentId, index === -1 ? spines.length + 1 : index + 1);
         },
         dropOnTable(event) {
-            $wire.moveBook(Number(event.dataTransfer.getData('text/plain')), null, null);
+            const bookId = Number(event.dataTransfer.getData('text/plain'));
+            if (bookId) $wire.moveBook(bookId, null, null);
+        },
+        dropShelf(event, targetNumber) {
+            const shelfId = Number(event.dataTransfer.getData('application/x-shelf'));
+            if (shelfId) $wire.moveShelf(shelfId, targetNumber);
         },
     }"
     x-on:keydown.escape.window="if ($wire.selectedBookId !== null) $wire.cancelSelection()"
@@ -255,10 +281,47 @@ new class extends Component {
                     <h2 id="bookcase-heading" class="sr-only">{{ $bookcase->name }}</h2>
 
                     @foreach ($bookcase->shelves as $shelf)
-                        <div wire:key="shelf-{{ $shelf->id }}" class="mb-2 last:mb-0">
-                            <h3 class="px-1 pb-1 font-sans text-xs font-semibold tracking-wide text-[#f2e8d5]">
-                                {{ $locations->numberedName(__('Balda :number', ['number' => $shelf->number]), $shelf->name) }}
-                            </h3>
+                        @php($shelfLabel = $locations->numberedName(__('Balda :number', ['number' => $shelf->number]), $shelf->name))
+                        <div
+                            wire:key="shelf-{{ $shelf->id }}"
+                            class="mb-2 last:mb-0"
+                            x-on:dragover.prevent
+                            x-on:drop="dropShelf($event, {{ $shelf->number }})"
+                        >
+                            {{-- Shelf header: drag handle and keyboard alternative to move the whole shelf (spec 004, RF-08). --}}
+                            <div class="flex items-center gap-1 px-1 pb-1">
+                                <button
+                                    type="button"
+                                    data-shelf-handle
+                                    draggable="true"
+                                    x-on:dragstart.stop="$event.dataTransfer.setData('application/x-shelf', '{{ $shelf->id }}'); $event.dataTransfer.effectAllowed = 'move'"
+                                    class="cursor-grab rounded px-1 text-[#e6d9c0] hover:bg-[#f6efe0]/10"
+                                    aria-label="{{ __('Arrastrar :shelf para moverla', ['shelf' => $shelfLabel]) }}"
+                                >
+                                    <flux:icon.bars-3 variant="micro" aria-hidden="true" />
+                                </button>
+
+                                <h3 class="flex-1 font-sans text-xs font-semibold tracking-wide text-[#f2e8d5]">{{ $shelfLabel }}</h3>
+
+                                <button
+                                    type="button"
+                                    wire:click="moveShelf({{ $shelf->id }}, {{ $shelf->number - 1 }})"
+                                    @disabled($loop->first)
+                                    class="rounded px-1 text-[#e6d9c0] hover:bg-[#f6efe0]/10 disabled:opacity-40"
+                                >
+                                    <flux:icon.arrow-up variant="micro" aria-hidden="true" />
+                                    <span class="sr-only">{{ __('Subir balda') }} {{ $shelfLabel }}</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    wire:click="moveShelf({{ $shelf->id }}, {{ $shelf->number + 1 }})"
+                                    @disabled($loop->last)
+                                    class="rounded px-1 text-[#e6d9c0] hover:bg-[#f6efe0]/10 disabled:opacity-40"
+                                >
+                                    <flux:icon.arrow-down variant="micro" aria-hidden="true" />
+                                    <span class="sr-only">{{ __('Bajar balda') }} {{ $shelfLabel }}</span>
+                                </button>
+                            </div>
 
                             <div class="flex gap-2 border-b-8 border-[#8a6440]">
                                 @foreach ($shelf->compartments as $compartment)

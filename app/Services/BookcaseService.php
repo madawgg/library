@@ -16,10 +16,14 @@ use InvalidArgumentException;
  * Bookcases and their shelves and compartments (spec 004, RF-03 and RF-04).
  *
  * A structure is a list of shelves, top to bottom. Each shelf is
- * ['name' => ?string, 'compartment_names' => list<?string>]: one entry per compartment, left to right.
+ * ['id' => ?int, 'name' => ?string, 'compartment_names' => list<?string>]: one entry per compartment,
+ * left to right. The optional "id" identifies an existing shelf, so it keeps its books when it moves.
  */
 class BookcaseService
 {
+    /** Temporary offset that keeps shelf numbers unique while they are being renumbered. */
+    private const NUMBER_PARKING_OFFSET = 1000000;
+
     public function __construct(private BookLocationService $locations) {}
 
     /**
@@ -78,7 +82,7 @@ class BookcaseService
     /**
      * Current structure of the bookcase, in the same format that create() and update() accept.
      *
-     * @return list<array{name: ?string, compartment_names: list<?string>}>
+     * @return list<array{id: int, name: ?string, compartment_names: list<?string>}>
      */
     public function structureOf(Bookcase $bookcase): array
     {
@@ -87,6 +91,7 @@ class BookcaseService
             ->orderBy('number')
             ->get()
             ->map(fn (Shelf $shelf) => [
+                'id' => $shelf->id,
                 'name' => $shelf->name,
                 'compartment_names' => $shelf->compartments->pluck('name')->all(),
             ])
@@ -94,7 +99,26 @@ class BookcaseService
     }
 
     /**
-     * @param  list<array{name: ?string, compartment_names: list<?string>}>  $structure
+     * Move a shelf, with its compartments and books, to another position of its bookcase
+     * (1 = top; out-of-range positions are clamped). The other shelves are renumbered (spec 004, RF-08).
+     */
+    public function moveShelf(Shelf $shelf, int $position): void
+    {
+        DB::transaction(function () use ($shelf, $position) {
+            $order = $shelf->bookcase->shelves()->orderBy('number')->pluck('id');
+            $order = $order->reject(fn (int $id) => $id === $shelf->id)->values();
+            $order->splice(max(0, min($position - 1, $order->count())), 0, [$shelf->id]);
+
+            $this->renumberShelves($shelf->bookcase, $order->all());
+        });
+    }
+
+    /**
+     * Each shelf of the structure may carry its "id": the shelf keeps its compartments and books
+     * wherever it is placed, a null id creates a new shelf, and the bookcase shelves left out are
+     * removed (their books move to the table). Without the "id" key, shelves are matched by number.
+     *
+     * @param  list<array{id?: ?int, name: ?string, compartment_names: list<?string>}>  $structure
      */
     private function syncStructure(Bookcase $bookcase, array $structure): void
     {
@@ -102,15 +126,39 @@ class BookcaseService
             throw new InvalidArgumentException('A bookcase needs at least one shelf.');
         }
 
-        foreach (array_values($structure) as $index => $shelfData) {
+        $structure = array_values($structure);
+        $existing = $bookcase->shelves()->get()->keyBy('id');
+        $byIdentity = collect($structure)->contains(fn (array $shelfData) => array_key_exists('id', $shelfData));
+
+        // Id of the existing shelf (or null for a new one) for every entry of the structure.
+        $targetIds = array_map(function (array $shelfData, int $index) use ($existing, $byIdentity) {
             if ($shelfData['compartment_names'] === []) {
                 throw new InvalidArgumentException('Every shelf needs at least one compartment.');
             }
 
-            $shelf = $bookcase->shelves()->updateOrCreate(
-                ['number' => $index + 1],
-                ['name' => $this->optionalName($shelfData['name'])],
-            );
+            $shelf = $byIdentity
+                ? $existing->get($shelfData['id'] ?? 0)
+                : $existing->firstWhere('number', $index + 1);
+
+            return $shelf?->id;
+        }, $structure, array_keys($structure));
+
+        $keptIds = collect($targetIds)->filter()->values();
+        $removed = $existing->keys()->diff($keptIds);
+
+        if ($removed->isNotEmpty()) {
+            $this->deleteCompartments(Compartment::whereIn('shelf_id', $removed->all()));
+            Shelf::whereKey($removed->all())->delete();
+        }
+
+        // Park the kept shelves out of the way of the unique (bookcase, number) index, then reload them
+        // so every shelf gets its final number saved.
+        $bookcase->shelves()->whereKey($keptIds->all())->increment('number', self::NUMBER_PARKING_OFFSET);
+        $kept = $bookcase->shelves()->whereKey($keptIds->all())->get()->keyBy('id');
+
+        foreach ($structure as $index => $shelfData) {
+            $shelf = $targetIds[$index] ? $kept->get($targetIds[$index]) : $bookcase->shelves()->make();
+            $shelf->fill(['number' => $index + 1, 'name' => $this->optionalName($shelfData['name'])])->save();
 
             foreach (array_values($shelfData['compartment_names']) as $compartmentIndex => $compartmentName) {
                 $shelf->compartments()->updateOrCreate(
@@ -121,10 +169,20 @@ class BookcaseService
 
             $this->deleteCompartments($shelf->compartments()->where('number', '>', count($shelfData['compartment_names'])));
         }
+    }
 
-        $removedShelves = $bookcase->shelves()->where('number', '>', count($structure));
-        $this->deleteCompartments(Compartment::whereIn('shelf_id', (clone $removedShelves)->select('id')));
-        $removedShelves->delete();
+    /**
+     * Give the shelves the numbers 1..N in the given order of ids.
+     *
+     * @param  list<int>  $shelfIds
+     */
+    private function renumberShelves(Bookcase $bookcase, array $shelfIds): void
+    {
+        $bookcase->shelves()->increment('number', self::NUMBER_PARKING_OFFSET);
+
+        foreach ($shelfIds as $index => $shelfId) {
+            Shelf::whereKey($shelfId)->update(['number' => $index + 1]);
+        }
     }
 
     /**

@@ -224,3 +224,20 @@
   - Arreglo: ahora es un bloque centrado y solo se coloca a un lado desde 640 px (`sm:float-end`).
   - Test nuevo en `ImprovementsTest`.
   - Verificación: `php artisan test`: 221 tests en verde. `pint --test` sin incidencias. En el navegador, a 375 px: sin float, título debajo de la portada y sin desbordamiento horizontal. A 1100 px: portada a la derecha, como antes.
+
+## 2026-10-03
+
+- Commit `c01496c` y push (M-09 de la spec 005 y la spec 006). La CI y el despliegue terminaron en verde.
+- **Spec 004 reabierta**: añadido **RF-08, mover baldas**, con los criterios CA-19 a CA-23. Decisión del usuario: se mueven las **baldas** dentro de su estantería, desde el formulario y desde la vista estantería.
+  - `BookcaseService`:
+    - `moveShelf()` mueve una balda a cualquier posición (fuera de rango, se ajusta al extremo más cercano) y renumera las demás.
+    - La sincronización de la estructura identifica cada balda por su **id**. La balda se lleva su nombre, sus huecos y sus libros, con sus posiciones. Sin id, se empareja por número como antes.
+    - Para no chocar con el índice único (estantería, número) al renumerar, los números se apartan temporalmente sumando un desplazamiento.
+  - **Fallo corregido:** al quitar una balda intermedia en el formulario, las baldas se emparejaban por número. La siguiente heredaba los libros de la quitada y los suyos pasaban a la mesa. Ahora solo pasan a la mesa los libros de la balda quitada.
+  - Formulario de estantería: botones Subir y Bajar en cada balda; el orden se aplica al guardar.
+  - Vista estantería:
+    - Asa para arrastrar cada balda y botones "Subir balda" / "Bajar balda" como alternativa sin arrastre (WCAG 2.5.7). Se guarda al momento y se anuncia.
+    - Los libros se arrastran como `text/plain` y las baldas como `application/x-shelf`, y cada zona de soltado solo atiende a su tipo.
+  - Verificación:
+    - `php artisan test`: 230 tests en verde (9 nuevos en `MoveShelvesTest`). `pint --test` sin incidencias.
+    - En el navegador, sobre MySQL: balda 3 con 5 libros subida a la posición 1 con los botones, devuelta a la 3 arrastrándola, y un libro arrastrado dentro de su hueco. Ningún libro fue a la mesa. Se dejó todo en el orden original.

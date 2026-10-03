@@ -1,6 +1,6 @@
 # Spec 004: Estantería virtual
 
-- **Estado:** aprobada
+- **Estado:** aprobada. Reabierta el 2026-10-03 para añadir RF-08 (mover baldas), a petición del usuario.
 - **Fecha:** 2026-09-29
 - **Depende de:** [001 Usuarios y roles](001-usuarios-y-roles.md), [002 Libros](002-libros.md)
 
@@ -82,6 +82,14 @@ Que cada usuario defina la estructura física de su biblioteca (salas, estanter�
   - **Seleccionar y colocar:** selecciona el libro. Después, al activar un destino (un hueco, una posición entre libros o la mesa), el libro se coloca allí. Se puede cancelar con Escape.
 - Los cambios de ubicación se anuncian a los lectores de pantalla.
 
+### RF-08 Mover baldas (añadido el 2026-10-03)
+- Las baldas de una estantería se pueden cambiar de posición. Por ejemplo, se crea una balda nueva (aparece abajo) y se sube a la posición 1.
+- Una balda se mueve **entera**: con su nombre, sus huecos y todos sus libros, que conservan su hueco y su posición. Solo cambia el número de la balda, que sigue siendo 1..N de arriba abajo.
+- Se puede mover en dos sitios:
+  - **Formulario de la estantería:** botones "Subir" y "Bajar" en cada balda. El nuevo orden se aplica al guardar.
+  - **Vista estantería:** arrastrando la balda por su asa y, como alternativa sin arrastre (WCAG 2.2, criterio 2.5.7), con botones "Subir balda" y "Bajar balda". El cambio se guarda al momento y se anuncia a los lectores de pantalla.
+- Las baldas se identifican por sí mismas, no por su número. Al quitar una balda del formulario, solo los libros de **esa** balda pasan a la mesa, aunque no sea la última (corrige lo que pasaba al quitar una balda intermedia).
+
 ## Criterios de aceptación
 
 ### Propiedad (RF-01)
@@ -115,9 +123,17 @@ Que cada usuario defina la estructura física de su biblioteca (salas, estanter�
 - **CA-17** Dado "Seleccionar y colocar" en curso, cuando se pulsa Escape, entonces se cancela sin cambios.
 - **CA-18** Dado cualquier cambio de ubicación, cuando se completa, entonces queda guardado al recargar la página.
 
+### Mover baldas (RF-08)
+- **CA-19** Dada una estantería de 3 baldas con libros, cuando en el formulario se sube la balda 3 a la posición 1 y se guarda, entonces esa balda pasa a ser la 1 con su nombre, sus huecos y sus libros (en los mismos huecos y posiciones), y las otras dos pasan a ser la 2 y la 3 con los suyos.
+- **CA-20** Dada una estantería, cuando en el formulario se añade una balda nueva, se sube a la posición 1 y se guarda, entonces la balda nueva es la 1 y las anteriores conservan sus libros.
+- **CA-21** Dada una estantería de 3 baldas con libros, cuando en el formulario se quita la balda 2 y se guarda, entonces solo los libros de la balda 2 pasan a la mesa, y los de la antigua balda 3 (ahora la 2) siguen en sus huecos.
+- **CA-22** Dada la vista estantería, cuando se arrastra una balda a otra posición o se usan sus botones "Subir balda" y "Bajar balda", entonces la balda cambia de posición con todos sus libros, el cambio se guarda al momento y se anuncia.
+- **CA-23** Dado un usuario sin permiso sobre la estantería, cuando intenta mover una balda, entonces recibe un 403.
+
 ## Decisiones tomadas
 
 - Al eliminar una sala se eliminan sus estanterías y los libros pasan a la mesa, tras confirmación.
 - Baldas y huecos tienen número y un nombre opcional.
 - La mesa muestra los libros por orden alfabético, 8 cada vez, con flechas de navegación debajo. Se representa de forma sencilla (tablero y cuerpo inferior).
 - Cada libro se dibuja como un lomo con el título; la portada y los datos se muestran al pasar el ratón o al enfocarlo.
+- RF-08: lo que se mueve son las **baldas** dentro de su estantería (no huecos ni estanterías), en el formulario y en la vista estantería.
